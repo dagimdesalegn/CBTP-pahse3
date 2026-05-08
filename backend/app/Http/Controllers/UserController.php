@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Services\NotificationService;
 
 class UserController extends Controller
 {
@@ -55,6 +56,11 @@ class UserController extends Controller
         ]);
 
         $user->update($validated);
+
+           // Notify member if just verified
+           if ($validated['is_verified'] && !$user->wasChanged('is_verified')) {
+               NotificationService::notifyRegistrationApproved($user);
+           }
 
         return response()->json([
             'message' => 'User verification status updated',

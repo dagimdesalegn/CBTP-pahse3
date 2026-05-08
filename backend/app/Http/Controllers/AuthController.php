@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Services\NotificationService;
 
 class AuthController extends Controller
 {
@@ -32,6 +33,9 @@ class AuthController extends Controller
         ]);
 
         $token = $user->createToken('api-token')->plainTextToken;
+
+    // Notify admins of new registration
+    NotificationService::notifyNewUserRegistration($user);
 
         return response()->json([
             'message' => 'User registered successfully',

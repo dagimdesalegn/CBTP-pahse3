@@ -242,27 +242,3 @@ export default function Register() {
     </div>
   )
 }
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-primary text-white py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors font-medium"
-          >
-            {loading ? 'Registering...' : 'Register'}
-          </button>
-        </form>
-
-        <p className="text-center text-gray-600 mt-6">
-          Already have an account?{' '}
-          <Link to="/login" className="text-primary hover:underline font-medium">
-            Login here
-          </Link>
-        </p>
-      </div>
-
-      {toast && <Toast {...toast} onClose={() => setToast(null)} />}
-    </div>
-  )
-}

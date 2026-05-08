@@ -7,6 +7,7 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Notification;
 use Illuminate\Http\Request;
+use App\Services\NotificationService;
 
 class OrderController extends Controller
 {
@@ -120,11 +121,15 @@ class OrderController extends Controller
         }
 
         // Send notification
-        Notification::create([
-            'user_id' => $user->id,
-            'title' => 'Order Placed',
-            'message' => 'Your order #' . $order->id . ' has been placed successfully',
-        ]);
+       // Notify member
+       NotificationService::notifyNewOrder($order);
+       
+       // Also notify member their order was placed
+       Notification::create([
+           'user_id' => $user->id,
+           'title' => '✅ Order Placed',
+           'message' => 'Your order #' . $order->id . ' has been placed successfully',
+       ]);
 
         return response()->json([
             'message' => 'Order created successfully',
@@ -147,21 +152,8 @@ class OrderController extends Controller
         $oldStatus = $order->status;
         $order->update(['status' => $validated['status']]);
 
-        // Send notification to member
-        $statusMessage = [
-            Order::STATUS_APPROVED => 'Your order has been approved',
-            Order::STATUS_READY => 'Your order is ready for pickup',
-            Order::STATUS_COMPLETED => 'Your order has been completed',
-            Order::STATUS_CANCELLED => 'Your order has been cancelled',
-        ];
-
-        if (isset($statusMessage[$validated['status']])) {
-            Notification::create([
-                'user_id' => $order->user_id,
-                'title' => 'Order Status Updated',
-                'message' => $statusMessage[$validated['status']],
-            ]);
-        }
+           // Notify member of status update
+           NotificationService::notifyOrderStatusUpdate($order, $oldStatus, $validated['status']);
 
         return response()->json([
             'message' => 'Order status updated successfully',
