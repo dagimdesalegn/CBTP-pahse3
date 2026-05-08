@@ -11,6 +11,7 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [toast, setToast] = useState(null)
+  const [selectedUser, setSelectedUser] = useState(null)
 
   useEffect(() => {
     fetchUsers()
@@ -70,7 +71,7 @@ export default function UserManagement() {
                 <thead className="bg-primary text-white">
                   <tr>
                     <th className="px-4 py-3 text-left">Name</th>
-                    <th className="px-4 py-3 text-left">Phone</th>
+                    <th className="px-4 py-3 text-left">Email</th>
                     <th className="px-4 py-3 text-left">Kebele ID</th>
                     <th className="px-4 py-3 text-left">Role</th>
                     <th className="px-4 py-3 text-center">Verified</th>
@@ -81,7 +82,7 @@ export default function UserManagement() {
                   {users.map(user => (
                     <tr key={user.id} className="border-b hover:bg-gray-50">
                       <td className="px-4 py-3 font-semibold">{user.name}</td>
-                      <td className="px-4 py-3">{user.phone}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{user.email}</td>
                       <td className="px-4 py-3">{user.kebele_id}</td>
                       <td className="px-4 py-3 capitalize">{user.role}</td>
                       <td className="px-4 py-3 text-center">
@@ -92,18 +93,26 @@ export default function UserManagement() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        {user.role === 'member' && (
+                        <div className="flex items-center justify-center gap-2">
+                          {user.role === 'member' && (
+                            <button
+                              onClick={() => handleVerify(user.id, user.is_verified)}
+                              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                                user.is_verified
+                                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                  : 'bg-green-100 text-green-700 hover:bg-green-200'
+                              }`}
+                            >
+                              {user.is_verified ? 'Unverify' : 'Verify'}
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleVerify(user.id, user.is_verified)}
-                            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                              user.is_verified
-                                ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                                : 'bg-green-100 text-green-700 hover:bg-green-200'
-                            }`}
+                            onClick={() => setSelectedUser(user)}
+                            className="px-3 py-1 rounded text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
                           >
-                            {user.is_verified ? 'Unverify' : 'Verify'}
+                            Details
                           </button>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -114,6 +123,59 @@ export default function UserManagement() {
         </main>
       </div>
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+
+      {selectedUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black bg-opacity-40"
+            onClick={() => setSelectedUser(null)}
+          ></div>
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 flex justify-between items-start">
+              <div>
+                <h2 className="text-2xl font-bold">New Registration Details</h2>
+                <p className="text-blue-100 text-sm">Review member information</p>
+              </div>
+              <button
+                onClick={() => setSelectedUser(null)}
+                className="text-xl font-bold hover:text-blue-200"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <p className="text-xs uppercase tracking-wider text-gray-500">Full Name</p>
+                <p className="text-lg font-semibold text-gray-900">{selectedUser.name}</p>
+              </div>
+              <div className="p-4 bg-blue-50 rounded-xl">
+                <p className="text-xs uppercase tracking-wider text-blue-600">Email Address</p>
+                <p className="text-lg font-semibold text-blue-900">{selectedUser.email}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs uppercase tracking-wider text-gray-500">Kebele ID</p>
+                  <p className="text-sm font-semibold text-gray-900">{selectedUser.kebele_id}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs uppercase tracking-wider text-gray-500">Role</p>
+                  <p className="text-sm font-semibold text-gray-900 capitalize">{selectedUser.role}</p>
+                </div>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <p className="text-xs uppercase tracking-wider text-gray-500">Verification Status</p>
+                <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold ${
+                  selectedUser.is_verified
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-yellow-100 text-yellow-700'
+                }`}>
+                  {selectedUser.is_verified ? 'Verified' : 'Pending'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

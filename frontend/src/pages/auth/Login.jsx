@@ -148,9 +148,8 @@ export default function Login() {
            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-8 py-6 border-t-2 border-gray-100">
              <p className="text-xs font-bold text-gray-800 mb-3 uppercase tracking-wider">📝 Demo Accounts</p>
              <div className="space-y-2 text-xs text-gray-700">
-               <p>👨‍💼 <span className="font-mono bg-gray-200 px-2 py-1 rounded">admin@example.com</span> / <span className="font-mono bg-gray-200 px-2 py-1 rounded">admin@123456</span></p>
-               <p>👔 <span className="font-mono bg-gray-200 px-2 py-1 rounded">manager@example.com</span> / <span className="font-mono bg-gray-200 px-2 py-1 rounded">manager@123456</span></p>
-               <p>👤 <span className="font-mono bg-gray-200 px-2 py-1 rounded">member@example.com</span> / <span className="font-mono bg-gray-200 px-2 py-1 rounded">member@123456</span></p>
+               <p>👨‍💼 <span className="font-mono bg-gray-200 px-2 py-1 rounded">admin@gmail.com</span> / <span className="font-mono bg-gray-200 px-2 py-1 rounded">admin@123456</span></p>
+               <p>👔 <span className="font-mono bg-gray-200 px-2 py-1 rounded">manager@gmail.com</span> / <span className="font-mono bg-gray-200 px-2 py-1 rounded">manager@123456</span></p>
             </div>
           </div>
         </div>

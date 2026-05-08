@@ -35,11 +35,11 @@ class AuthController extends Controller
                 'name' => $googleUser->getName() ?: $googleUser->getNickname() ?: 'Google User',
                 'email' => $googleUser->getEmail(),
                 'google_id' => $googleUser->getId(),
-                'phone' => 'google_' . $googleUser->getId(),
+                'phone' => null,
                 'kebele_id' => 'GOOGLE-' . $googleUser->getId(),
                 'password' => Hash::make(Str::random(32)),
                 'role' => 'member',
-                'is_verified' => true,
+                'is_verified' => false,
             ]);
 
             NotificationService::notifyNewUserRegistration($user);
