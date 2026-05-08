@@ -1,6 +1,12 @@
 export default function OrderDetailModal({ order, isOpen, onClose }) {
   if (!isOpen || !order) return null
 
+  const items = Array.isArray(order.orderItems)
+    ? order.orderItems
+    : Array.isArray(order.order_items)
+      ? order.order_items
+      : []
+
   const statusColors = {
     pending: 'bg-gray-100 text-gray-700',
     approved: 'bg-yellow-100 text-yellow-700',
@@ -53,18 +59,18 @@ export default function OrderDetailModal({ order, isOpen, onClose }) {
 
           {/* Order Items */}
           <div className="mb-8 pb-8 border-b-2 border-gray-200">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">📦 Products ({order.orderItems?.length || 0})</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">📦 Products ({items.length})</h3>
             <div className="space-y-3">
-              {order.orderItems && order.orderItems.map(item => (
+              {items.map(item => (
                 <div key={item.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500">
                   <div>
                     <p className="font-semibold text-gray-900">{item.product?.name || 'Unknown Product'}</p>
                     <p className="text-sm text-gray-600">
-                      {item.quantity}x @ ${item.unit_price}
+                      {item.quantity}x @ ${Number(item.unit_price || 0).toFixed(2)}
                     </p>
                   </div>
                   <p className="font-bold text-lg text-blue-600">
-                    ${(item.quantity * item.unit_price).toFixed(2)}
+                    ${(Number(item.quantity || 0) * Number(item.unit_price || 0)).toFixed(2)}
                   </p>
                 </div>
               ))}
@@ -75,7 +81,7 @@ export default function OrderDetailModal({ order, isOpen, onClose }) {
           <div className="mb-8 pb-8 border-b-2 border-gray-200">
             <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-200">
               <p className="text-lg font-bold text-gray-800">Total Amount:</p>
-              <p className="text-3xl font-bold text-blue-600">${order.total_price?.toFixed(2)}</p>
+              <p className="text-3xl font-bold text-blue-600">${Number(order.total_price || 0).toFixed(2)}</p>
             </div>
           </div>
 

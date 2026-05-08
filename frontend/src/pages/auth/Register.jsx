@@ -72,25 +72,25 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 flex items-center justify-center p-4 py-8">
-      <div className="w-full max-w-md">
-        {/* Card Container */}
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="w-full max-w-sm">
+        {/* Card Container - Professional sizing */}
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
           {/* Header with gradient */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8 sm:px-8">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-12">
             <div className="text-center">
-              <div className="text-4xl mb-2">🏪</div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Join Coop Store</h1>
-              <p className="text-blue-100 text-sm">Create your member account</p>
+              <div className="text-5xl mb-3">🏪</div>
+              <h1 className="text-4xl font-bold text-white mb-2">Join Coop Store</h1>
+              <p className="text-blue-100 text-sm font-medium">Create your member account</p>
             </div>
           </div>
 
           {/* Form Content */}
-          <div className="px-6 py-8 sm:px-8 max-h-[calc(100vh-200px)] overflow-y-auto">
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="px-8 py-10 max-h-[calc(100vh-220px)] overflow-y-auto">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {/* Full Name Input */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Full Name
+                <label className="block text-sm font-bold text-gray-800 mb-2.5">
+                  👤 Full Name
                 </label>
                 <input
                   type="text"
@@ -99,14 +99,14 @@ export default function Register() {
                   onChange={handleChange}
                   placeholder="John Doe"
                   required
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900"
+                  className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 font-medium"
                 />
               </div>
 
               {/* Email Input */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email Address
+                <label className="block text-sm font-bold text-gray-800 mb-2.5">
+                  📧 Email Address
                 </label>
                 <input
                   type="email"
@@ -115,14 +115,14 @@ export default function Register() {
                   onChange={handleChange}
                   placeholder="john@example.com"
                   required
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900"
+                  className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 font-medium"
                 />
               </div>
 
               {/* Kebele ID Input */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Kebele ID
+                <label className="block text-sm font-bold text-gray-800 mb-2.5">
+                  🪪 Kebele ID
                 </label>
                 <input
                   type="text"
@@ -131,14 +131,14 @@ export default function Register() {
                   onChange={handleChange}
                   placeholder="Your Kebele ID"
                   required
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900"
+                  className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 font-medium"
                 />
               </div>
 
               {/* Password Input */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Password
+                <label className="block text-sm font-bold text-gray-800 mb-2.5">
+                  🔐 Password
                 </label>
                 <input
                   type="password"
@@ -147,14 +147,14 @@ export default function Register() {
                   onChange={handleChange}
                   placeholder="Min 8 characters"
                   required
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900"
+                  className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 font-medium"
                 />
               </div>
 
               {/* Confirm Password Input */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Confirm Password
+                <label className="block text-sm font-bold text-gray-800 mb-2.5">
+                  🔒 Confirm Password
                 </label>
                 <input
                   type="password"
@@ -163,12 +163,12 @@ export default function Register() {
                   onChange={handleChange}
                   placeholder="Re-enter password"
                   required
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900"
+                  className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 font-medium"
                 />
               </div>
 
               {/* Terms Checkbox */}
-              <div className="flex items-start gap-3 bg-blue-50 p-3 rounded-lg">
+              <div className="flex items-start gap-3 bg-blue-50 p-4 rounded-xl">
                 <input
                   type="checkbox"
                   id="terms"
@@ -187,7 +187,7 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 transition-all font-semibold text-base shadow-md hover:shadow-lg disabled:shadow-none"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 transition-all font-bold text-lg shadow-lg hover:shadow-xl disabled:shadow-none transform hover:scale-105 active:scale-95"
               >
                 {loading ? (
                   <span className="flex items-center justify-center">
@@ -204,19 +204,19 @@ export default function Register() {
             </form>
 
             {/* Divider */}
-            <div className="relative my-6">
+            <div className="relative my-8">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
+                <div className="w-full border-t-2 border-gray-200"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500 font-medium">Or register with</span>
+                <span className="px-3 bg-white text-gray-600 font-semibold">OR</span>
               </div>
             </div>
 
             {/* Google OAuth Button */}
             <button
               type="button"
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700"
+              className="w-full flex items-center justify-center gap-3 px-5 py-3.5 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all font-bold text-gray-800"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -228,9 +228,9 @@ export default function Register() {
             </button>
 
             {/* Login Link */}
-            <p className="text-center text-gray-600 mt-6 text-sm">
+            <p className="text-center text-gray-700 mt-8 text-sm font-medium">
               Already have an account?{' '}
-              <Link to="/login" className="text-blue-600 hover:text-blue-700 font-semibold transition-colors">
+              <Link to="/login" className="text-blue-600 hover:text-blue-700 font-bold transition-colors">
                 Login here
               </Link>
             </p>

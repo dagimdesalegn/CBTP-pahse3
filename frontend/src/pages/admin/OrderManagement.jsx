@@ -110,7 +110,7 @@ export default function OrderManagement() {
                           <button
                             key={stage.status}
                             onClick={() => updateStatus(order.id, stage.status)}
-                            disabled={order.status === stage.status}
+                            disabled={order.status === stage.status || order.status === 'completed'}
                             className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
                               order.status === stage.status
                                 ? 'ring-2 ring-offset-1 ring-blue-500 ' + stage.color
@@ -156,7 +156,7 @@ export default function OrderManagement() {
                             <button
                               key={stage.status}
                               onClick={() => updateStatus(order.id, stage.status)}
-                              disabled={order.status === stage.status}
+                              disabled={order.status === stage.status || order.status === 'completed'}
                               title={`Mark as ${stage.label}`}
                               className={`px-3 py-1.5 rounded text-xs font-semibold transition-all ${
                                 order.status === stage.status

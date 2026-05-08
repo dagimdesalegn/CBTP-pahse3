@@ -19,7 +19,6 @@ import InventoryManagement from './pages/manager/InventoryManagement'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import UserManagement from './pages/admin/UserManagement'
 import Reports from './pages/admin/Reports'
-import AdminOrders from './pages/admin/OrderManagement'
 import AdminNotifications from './pages/admin/AdminNotifications'
 
 function ProtectedRoute({ children, requiredRole }) {
@@ -171,14 +170,6 @@ function AppRoutes() {
         element={
           <ProtectedRoute requiredRole="admin">
             <Reports />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/orders"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <AdminOrders />
           </ProtectedRoute>
         }
       />

@@ -24,7 +24,6 @@ export default function Sidebar() {
       { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
       { icon: Users, label: 'Users', path: '/admin/users' },
       { icon: BarChart3, label: 'Reports', path: '/admin/reports' },
-      { icon: ShoppingCart, label: 'Orders', path: '/admin/orders' },
     ],
   }
 

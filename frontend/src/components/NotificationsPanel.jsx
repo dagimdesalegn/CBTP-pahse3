@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import api from '../../services/api'
+import api from '../services/api'
 import Toast from './Toast'
 
 export default function NotificationsPanel({ isOpen, onClose }) {
@@ -122,17 +122,17 @@ export default function NotificationsPanel({ isOpen, onClose }) {
                 <div
                   key={notification.id}
                   className={`p-4 rounded-lg border-l-4 transition-all ${
-                    !notification.read_at
+                    !notification.is_read
                       ? 'bg-blue-50 border-blue-500 border-l-4'
                       : 'bg-gray-50 border-gray-300'
                   }`}
                 >
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex-1">
-                      <h3 className={`font-bold ${!notification.read_at ? 'text-blue-900' : 'text-gray-700'}`}>
+                      <h3 className={`font-bold ${!notification.is_read ? 'text-blue-900' : 'text-gray-700'}`}>
                         {notification.title}
                       </h3>
-                      <p className={`text-sm mt-1 ${!notification.read_at ? 'text-blue-700' : 'text-gray-600'}`}>
+                      <p className={`text-sm mt-1 ${!notification.is_read ? 'text-blue-700' : 'text-gray-600'}`}>
                         {notification.message}
                       </p>
                       <p className="text-xs text-gray-500 mt-2">
@@ -141,7 +141,7 @@ export default function NotificationsPanel({ isOpen, onClose }) {
                     </div>
 
                     <div className="flex gap-1">
-                      {!notification.read_at && (
+                      {!notification.is_read && (
                         <button
                           onClick={() => markAsRead(notification.id)}
                           className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors p-1"

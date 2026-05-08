@@ -27,7 +27,10 @@ export default function MemberDashboard() {
       const notifications = notificationsRes.data.data || notificationsRes.data || []
 
       const totalOrders = (Array.isArray(orders) ? orders : []).length
-      const totalSpent = (Array.isArray(orders) ? orders : []).reduce((sum, o) => sum + (o.total_price || 0), 0)
+      const totalSpent = (Array.isArray(orders) ? orders : []).reduce(
+        (sum, o) => sum + Number(o.total_price || 0),
+        0
+      )
       const pendingOrders = (Array.isArray(orders) ? orders : []).filter(o => o.status === 'pending').length
       const unreadNotifications = (Array.isArray(notifications) ? notifications : []).filter(n => !n.is_read).length
       const availableProducts = (Array.isArray(products) ? products : []).length
@@ -72,7 +75,7 @@ export default function MemberDashboard() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <StatCard title="Total Orders" value={stats?.totalOrders || 0} color="blue" />
-              <StatCard title="Total Spent" value={`$${(stats?.totalSpent || 0).toFixed(2)}`} color="green" />
+              <StatCard title="Total Spent" value={`$${Number(stats?.totalSpent || 0).toFixed(2)}`} color="green" />
               <StatCard title="Pending Orders" value={stats?.pendingOrders || 0} color="yellow" />
               <StatCard title="Available Products" value={stats?.availableProducts || 0} color="purple" />
               <StatCard title="Unread Notifications" value={stats?.unreadNotifications || 0} color="red" />

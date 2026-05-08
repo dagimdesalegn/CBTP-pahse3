@@ -9,11 +9,11 @@ class InventoryLogPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->role === 'admin';
+        return $user->role === 'admin' || $user->role === 'manager';
     }
 
     public function view(User $user): bool
     {
-        return $user->role === 'admin';
+        return $user->role === 'admin' || $user->role === 'manager';
     }
 }

@@ -19,12 +19,6 @@ class NotificationService
                 'user_id' => $manager->id,
                 'title' => '📋 New Order Placed',
                 'message' => "Member {$order->user->name} placed a new order #{$order->id}",
-                'type' => 'order_created',
-                'data' => json_encode([
-                    'order_id' => $order->id,
-                    'member_name' => $order->user->name,
-                    'total' => $order->total_price,
-                ]),
             ]);
         }
     }
@@ -43,12 +37,6 @@ class NotificationService
                 'user_id' => $admin->id,
                 'title' => '👤 New User Registration',
                 'message' => $message,
-                'type' => 'user_registered',
-                'data' => json_encode([
-                    'user_id' => $user->id,
-                    'user_name' => $user->name,
-                    'user_email' => $user->email,
-                ]),
             ]);
         }
     }
@@ -62,10 +50,6 @@ class NotificationService
             'user_id' => $user->id,
             'title' => '✅ Registration Approved',
             'message' => 'Your account has been verified! You can now start shopping.',
-            'type' => 'registration_approved',
-            'data' => json_encode([
-                'user_id' => $user->id,
-            ]),
         ]);
     }
 
@@ -88,12 +72,6 @@ class NotificationService
             'user_id' => $order->user_id,
             'title' => '📦 Order Status Update',
             'message' => $message,
-            'type' => 'order_status_updated',
-            'data' => json_encode([
-                'order_id' => $order->id,
-                'old_status' => $oldStatus,
-                'new_status' => $newStatus,
-            ]),
         ]);
     }
 }

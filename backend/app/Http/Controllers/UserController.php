@@ -58,7 +58,7 @@ class UserController extends Controller
         $user->update($validated);
 
            // Notify member if just verified
-           if ($validated['is_verified'] && !$user->wasChanged('is_verified')) {
+           if ($validated['is_verified'] && $user->wasChanged('is_verified')) {
                NotificationService::notifyRegistrationApproved($user);
            }
 

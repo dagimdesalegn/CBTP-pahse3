@@ -4,6 +4,7 @@ import Sidebar from '../../components/Sidebar'
 import StatusBadge from '../../components/StatusBadge'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import Toast from '../../components/Toast'
+import OrderDetailModal from '../../components/OrderDetailModal'
 import api from '../../services/api'
 
 const STAGES = [
@@ -19,6 +20,8 @@ export default function OrderManagement() {
   const [filter, setFilter] = useState('')
   const [toast, setToast] = useState(null)
   const [expandedOrderId, setExpandedOrderId] = useState(null)
+  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
 
   useEffect(() => {
     fetchOrders()
@@ -46,6 +49,16 @@ export default function OrderManagement() {
       fetchOrders()
     } catch (err) {
       setToast({ type: 'error', message: 'Failed to update order' })
+    }
+  }
+
+  const viewOrderDetails = async (orderId) => {
+    try {
+      const response = await api.get(`/orders/${orderId}`)
+      setSelectedOrder(response.data)
+      setIsDetailModalOpen(true)
+    } catch (err) {
+      setToast({ type: 'error', message: 'Failed to load order details' })
     }
   }
 
@@ -97,6 +110,13 @@ export default function OrderManagement() {
                     {expandedOrderId === order.id ? 'Hide Options ▲' : 'Show Options ▼'}
                   </button>
 
+                  <button
+                    onClick={() => viewOrderDetails(order.id)}
+                    className="w-full px-4 py-3 text-left hover:bg-blue-50 border-t border-gray-100 font-semibold text-indigo-600 transition-colors"
+                  >
+                    👁️ View Full Details
+                  </button>
+
                   {expandedOrderId === order.id && (
                     <div className="px-4 py-4 border-t border-gray-100">
                       <p className="text-xs font-semibold text-gray-600 mb-3 uppercase tracking-wider">Update Status</p>
@@ -105,7 +125,7 @@ export default function OrderManagement() {
                           <button
                             key={stage.status}
                             onClick={() => updateOrderStatus(order.id, stage.status)}
-                            disabled={order.status === stage.status}
+                            disabled={order.status === stage.status || order.status === 'completed'}
                             className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
                               order.status === stage.status
                                 ? 'ring-2 ring-offset-1 ring-blue-500 ' + stage.color
@@ -144,12 +164,19 @@ export default function OrderManagement() {
                         <StatusBadge status={order.status} />
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <div className="flex gap-2 flex-wrap justify-center">
+                        <div className="flex gap-2 flex-wrap justify-center items-center">
+                          <button
+                            onClick={() => viewOrderDetails(order.id)}
+                            className="px-3 py-1.5 rounded text-xs font-semibold bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition-all"
+                            title="View full order details"
+                          >
+                            👁️
+                          </button>
                           {STAGES.map(stage => (
                             <button
                               key={stage.status}
                               onClick={() => updateOrderStatus(order.id, stage.status)}
-                              disabled={order.status === stage.status}
+                              disabled={order.status === stage.status || order.status === 'completed'}
                               title={`Mark as ${stage.label}`}
                               className={`px-3 py-1.5 rounded text-xs font-semibold transition-all ${
                                 order.status === stage.status
@@ -179,6 +206,15 @@ export default function OrderManagement() {
       </div>
 
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+
+      <OrderDetailModal
+        order={selectedOrder}
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false)
+          setSelectedOrder(null)
+        }}
+      />
     </div>
   )
 }

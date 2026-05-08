@@ -71,12 +71,6 @@ export default function AdminDashboard() {
                 color="green"
               />
               <ActionCard
-                title="Manage Orders"
-                description="Monitor all orders and status"
-                link="/admin/orders"
-                color="purple"
-              />
-              <ActionCard
                 title="Send Notifications"
                 description="Broadcast messages to members"
                 link="/admin/notifications"
