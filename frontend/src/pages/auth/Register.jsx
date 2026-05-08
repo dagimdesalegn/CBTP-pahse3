@@ -36,9 +36,9 @@ export default function Register() {
 
     try {
       await register({
-        name: formData.name,
-        phone: formData.phone,
-        kebele_id: formData.kebele_id,
+        name: formData.name.trim(),
+        phone: formData.phone.trim().replace(/[\s-]+/g, ''),
+        kebele_id: formData.kebele_id.trim(),
         password: formData.password,
         password_confirmation: formData.password_confirmation,
       })
@@ -48,9 +48,13 @@ export default function Register() {
       })
       setTimeout(() => navigate('/dashboard'), 2000)
     } catch (error) {
+      const validationErrors = error.response?.data?.errors
+        ? Object.values(error.response.data.errors).flat().join(' ')
+        : null
+
       setToast({
         type: 'error',
-        message: error.response?.data?.error || 'Registration failed',
+        message: validationErrors || error.response?.data?.error || 'Registration failed',
       })
     } finally {
       setLoading(false)

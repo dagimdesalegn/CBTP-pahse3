@@ -10,16 +10,22 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
+        $request->merge([
+            'name' => trim((string) $request->input('name')),
+            'email' => trim((string) $request->input('email')),
+            'kebele_id' => trim((string) $request->input('kebele_id')),
+        ]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'phone' => 'required|string|unique:users,phone',
+            'email' => 'required|email|unique:users,email',
             'kebele_id' => 'required|string|unique:users,kebele_id',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
         $user = User::create([
             'name' => $validated['name'],
-            'phone' => $validated['phone'],
+            'email' => $validated['email'],
             'kebele_id' => $validated['kebele_id'],
             'password' => Hash::make($validated['password']),
             'role' => 'member',
@@ -36,12 +42,16 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
+        $request->merge([
+            'email' => trim((string) $request->input('email')),
+        ]);
+
         $validated = $request->validate([
-            'phone' => 'required|string',
+            'email' => 'required|email',
             'password' => 'required|string',
         ]);
 
-        $user = User::where('phone', $validated['phone'])->first();
+        $user = User::where('email', $validated['email'])->first();
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
             return response()->json([

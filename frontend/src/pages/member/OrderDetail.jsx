@@ -1,10 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Sidebar from '../../components/Sidebar'
 import StatusBadge from '../../components/StatusBadge'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import api from '../../services/api'
+
+const statusSteps = [
+  { key: 'pending', label: 'Requested', description: 'Order received and waiting for review' },
+  { key: 'approved', label: 'Approved', description: 'Order approved and queued for processing' },
+  { key: 'ready', label: 'Ready', description: 'Packed and ready for pickup' },
+  { key: 'completed', label: 'Completed', description: 'Collected by the member' },
+]
 
 export default function OrderDetail() {
   const { id } = useParams()
@@ -26,11 +33,28 @@ export default function OrderDetail() {
     }
   }
 
-  if (loading) return <LoadingSpinner />
-  if (!order) return <div>Order not found</div>
+  const orderItems = useMemo(() => {
+    return order?.orderItems || order?.order_items || []
+  }, [order])
 
-  const orderDate = new Date(order.created_at).toLocaleDateString()
-  const updatedDate = new Date(order.updated_at).toLocaleDateString()
+  const orderDate = order ? new Date(order.created_at).toLocaleDateString() : ''
+  const updatedDate = order ? new Date(order.updated_at).toLocaleDateString() : ''
+  const currentStepIndex = Math.max(
+    0,
+    statusSteps.findIndex(step => step.key === order?.status)
+  )
+
+  if (loading) return <LoadingSpinner />
+  if (!order) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Order not found</h1>
+          <p className="text-gray-600">The order could not be loaded.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -38,61 +62,129 @@ export default function OrderDetail() {
       <div className="flex-1 flex flex-col">
         <Navbar />
         <main className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <div className="flex justify-between items-start mb-4">
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 text-white shadow-xl">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Order #{order.id}</h1>
-                  <p className="text-gray-600 mt-1">Placed on {orderDate}</p>
+                  <p className="text-sm uppercase tracking-[0.2em] text-slate-300">Order summary</p>
+                  <h1 className="mt-2 text-3xl font-bold">Order #{order.id}</h1>
+                  <p className="mt-2 text-slate-300">Placed on {orderDate}</p>
                 </div>
-                <StatusBadge status={order.status} />
+                <div className="rounded-xl bg-white/10 px-4 py-3 backdrop-blur">
+                  <StatusBadge status={order.status} />
+                  <p className="mt-2 text-sm text-slate-300">Last updated {updatedDate}</p>
+                </div>
               </div>
 
-              {order.notes && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm font-semibold text-gray-700 mb-1">Notes</p>
-                  <p className="text-gray-600">{order.notes}</p>
-                </div>
-              )}
+              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                <StatChip label="Items" value={orderItems.length} />
+                <StatChip label="Total" value={`$${Number(order.total_price).toFixed(2)}`} />
+                <StatChip label="Status" value={capitalize(order.status)} />
+              </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="bg-primary text-white p-4">
-                <h2 className="text-xl font-bold">Order Items</h2>
+            <div className="rounded-2xl bg-white shadow-lg ring-1 ring-black/5">
+              <div className="border-b border-slate-100 px-6 py-4">
+                <h2 className="text-xl font-bold text-slate-900">Order Progress</h2>
+                <p className="mt-1 text-sm text-slate-600">Track how your order moves from request to pickup.</p>
               </div>
 
-              <div className="divide-y">
-                {order.orderItems?.map(item => (
-                  <div key={item.id} className="p-4 flex justify-between items-center">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{item.product?.name}</h3>
-                      <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">${(item.unit_price * item.quantity).toFixed(2)}</p>
-                      <p className="text-sm text-gray-600">${item.unit_price} each</p>
-                    </div>
+              <div className="px-6 py-6">
+                <div className="grid gap-4 md:grid-cols-4">
+                  {statusSteps.map((step, index) => {
+                    const isComplete = index < currentStepIndex || order.status === 'completed'
+                    const isActive = step.key === order.status
+                    const isCancelled = order.status === 'cancelled'
+
+                    return (
+                      <div key={step.key} className="relative rounded-xl border p-4">
+                        <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold ${isCancelled
+                          ? 'bg-red-100 text-red-700'
+                          : isComplete || isActive
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-slate-100 text-slate-500'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <h3 className="font-semibold text-slate-900">{step.label}</h3>
+                        <p className="mt-1 text-sm text-slate-600">{step.description}</p>
+                        <div className={`mt-4 h-1 rounded-full ${isCancelled
+                          ? 'bg-red-200'
+                          : isComplete || isActive
+                            ? 'bg-emerald-500'
+                            : 'bg-slate-200'
+                        }`} />
+                        {isActive && (
+                          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700">Current stage</p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+              <div className="overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-black/5">
+                <div className="border-b border-slate-100 bg-slate-50 px-6 py-4">
+                  <h2 className="text-xl font-bold text-slate-900">Products Ordered</h2>
+                </div>
+
+                {orderItems.length === 0 ? (
+                  <div className="px-6 py-10 text-center text-slate-600">
+                    No products found for this order.
                   </div>
-                ))}
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {orderItems.map(item => {
+                      const lineTotal = Number(item.unit_price) * Number(item.quantity)
+                      return (
+                        <div key={item.id} className="flex items-center justify-between gap-4 px-6 py-5">
+                          <div>
+                            <h3 className="text-lg font-semibold text-slate-900">{item.product?.name || 'Product'}</h3>
+                            <p className="mt-1 text-sm text-slate-600">{item.product?.category || 'General'} · {item.quantity} unit{item.quantity > 1 ? 's' : ''}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-semibold text-slate-900">${lineTotal.toFixed(2)}</p>
+                            <p className="text-sm text-slate-500">${Number(item.unit_price).toFixed(2)} each</p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
+                  <span className="text-lg font-semibold text-slate-900">Order Total</span>
+                  <span className="text-2xl font-bold text-primary">${Number(order.total_price).toFixed(2)}</span>
+                </div>
               </div>
 
-              <div className="bg-gray-50 p-4 border-t flex justify-between items-center text-lg font-bold">
-                <span>Total:</span>
-                <span className="text-primary text-2xl">${order.total_price}</span>
-              </div>
-            </div>
+              <div className="space-y-6">
+                <div className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-black/5">
+                  <h3 className="text-lg font-bold text-slate-900">Member Information</h3>
+                  <div className="mt-4 space-y-2 text-sm text-slate-600">
+                    <p><span className="font-semibold text-slate-900">Name:</span> {order.user?.name}</p>
+                    <p><span className="font-semibold text-slate-900">Phone:</span> {order.user?.phone}</p>
+                    <p><span className="font-semibold text-slate-900">Verification:</span> {order.user?.is_verified ? 'Verified' : 'Pending verification'}</p>
+                  </div>
+                </div>
 
-            <div className="mt-6 grid md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-lg shadow-md p-4">
-                <h3 className="font-bold text-gray-900 mb-2">Member Information</h3>
-                <p className="text-gray-600">{order.user?.name}</p>
-                <p className="text-gray-600">{order.user?.phone}</p>
-              </div>
+                <div className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-black/5">
+                  <h3 className="text-lg font-bold text-slate-900">Pickup Notes</h3>
+                  <div className="mt-4 space-y-3 text-sm text-slate-600">
+                    <p>• Wait for the status to move to <span className="font-semibold text-slate-900">Ready</span> before coming to pick it up.</p>
+                    <p>• You will receive the order from the store staff after confirmation.</p>
+                    <p>• Keep this order number for reference: <span className="font-semibold text-slate-900">#{order.id}</span></p>
+                  </div>
+                </div>
 
-              <div className="bg-white rounded-lg shadow-md p-4">
-                <h3 className="font-bold text-gray-900 mb-2">Timeline</h3>
-                <p className="text-sm text-gray-600">Order placed: {orderDate}</p>
-                <p className="text-sm text-gray-600">Last updated: {updatedDate}</p>
+                {order.notes && (
+                  <div className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-black/5">
+                    <h3 className="text-lg font-bold text-slate-900">Notes</h3>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">{order.notes}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -101,3 +193,18 @@ export default function OrderDetail() {
     </div>
   )
 }
+
+function StatChip({ label, value }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/10 px-4 py-3">
+      <p className="text-xs uppercase tracking-[0.18em] text-slate-300">{label}</p>
+      <p className="mt-1 text-lg font-semibold text-white">{value}</p>
+    </div>
+  )
+}
+
+function capitalize(value) {
+  if (!value) return '-'
+  return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
