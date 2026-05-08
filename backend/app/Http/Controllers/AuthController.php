@@ -6,9 +6,57 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Services\NotificationService;
+use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
+    public function googleRedirect()
+    {
+        return Socialite::driver('google')->stateless()->redirect();
+    }
+
+    public function googleCallback()
+    {
+        $frontendUrl = rtrim(env('FRONTEND_URL', 'http://localhost:5173'), '/');
+
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->user();
+        } catch (\Exception $e) {
+            return redirect()->away($frontendUrl . '/login?error=google');
+        }
+
+        $user = User::where('google_id', $googleUser->getId())
+            ->orWhere('email', $googleUser->getEmail())
+            ->first();
+
+        if (!$user) {
+            $user = User::create([
+                'name' => $googleUser->getName() ?: $googleUser->getNickname() ?: 'Google User',
+                'email' => $googleUser->getEmail(),
+                'google_id' => $googleUser->getId(),
+                'phone' => 'google_' . $googleUser->getId(),
+                'kebele_id' => 'GOOGLE-' . $googleUser->getId(),
+                'password' => Hash::make(Str::random(32)),
+                'role' => 'member',
+                'is_verified' => true,
+            ]);
+
+            NotificationService::notifyNewUserRegistration($user);
+        } else {
+            if (!$user->google_id) {
+                $user->google_id = $googleUser->getId();
+            }
+            if (!$user->email) {
+                $user->email = $googleUser->getEmail();
+            }
+            $user->save();
+        }
+
+        $token = $user->createToken('api-token')->plainTextToken;
+
+        return redirect()->away($frontendUrl . '/auth/google/callback?token=' . urlencode($token));
+    }
     public function register(Request $request)
     {
         $request->merge([

@@ -7,6 +7,7 @@ import api from './services/api'
 // Pages
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
+import GoogleCallback from './pages/auth/GoogleCallback'
 import MemberDashboard from './pages/member/Dashboard'
 import MemberProducts from './pages/member/Products'
 import MemberOrders from './pages/member/Orders'
@@ -68,6 +69,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
       {/* Dashboard router - redirects based on role */}
       <Route path="/dashboard" element={<RoleBasedDashboard />} />

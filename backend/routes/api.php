@@ -14,6 +14,8 @@ use App\Http\Controllers\TelegramController;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/auth/google/redirect', [AuthController::class, 'googleRedirect']);
+Route::get('/auth/google/callback', [AuthController::class, 'googleCallback']);
 
 // Telegram webhook
 Route::post('/telegram/webhook', [TelegramController::class, 'webhook']);

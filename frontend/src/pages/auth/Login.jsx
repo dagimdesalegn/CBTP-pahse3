@@ -29,11 +29,9 @@ export default function Login() {
   }
 
   const handleGoogleLogin = () => {
-    // Google OAuth will be implemented via backend
-     setToast({
-       type: 'info',
-       message: 'Google login coming soon',
-     })
+    const apiBase = import.meta.env.VITE_API_URL || ''
+    const base = apiBase.endsWith('/api') ? apiBase.slice(0, -4) : apiBase
+    window.location.href = `${base}/api/auth/google/redirect`
   }
 
   return (
