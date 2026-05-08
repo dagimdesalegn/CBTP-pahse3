@@ -51,7 +51,7 @@ function RoleBasedDashboard() {
 
   if (user.role === 'admin') return <Navigate to="/admin/dashboard" replace />
   if (user.role === 'manager') return <Navigate to="/manager/dashboard" replace />
-  return <Navigate to="/dashboard" replace />
+  return <Navigate to="/member/dashboard" replace />
 }
 
 function AppRoutes() {
@@ -70,11 +70,12 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
+      {/* Dashboard router - redirects based on role */}
       <Route path="/dashboard" element={<RoleBasedDashboard />} />
 
       {/* Member Routes */}
       <Route
-        path="/dashboard"
+        path="/member/dashboard"
         element={
           <ProtectedRoute requiredRole="member">
             <MemberDashboard />
