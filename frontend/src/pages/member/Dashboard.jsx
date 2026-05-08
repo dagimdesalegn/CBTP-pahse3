@@ -22,24 +22,32 @@ export default function MemberDashboard() {
         api.get('/notifications'),
       ])
 
-      const orders = ordersRes.data.data || []
-      const products = productsRes.data.data || []
-      const notifications = notificationsRes.data.data || []
+      const orders = ordersRes.data.data || ordersRes.data || []
+      const products = productsRes.data.data || productsRes.data || []
+      const notifications = notificationsRes.data.data || notificationsRes.data || []
 
-      const totalOrders = orders.length
-      const totalSpent = orders.reduce((sum, o) => sum + o.total_price, 0)
-      const pendingOrders = orders.filter(o => o.status === 'pending').length
-      const unreadNotifications = notifications.filter(n => !n.is_read).length
+      const totalOrders = (Array.isArray(orders) ? orders : []).length
+      const totalSpent = (Array.isArray(orders) ? orders : []).reduce((sum, o) => sum + (o.total_price || 0), 0)
+      const pendingOrders = (Array.isArray(orders) ? orders : []).filter(o => o.status === 'pending').length
+      const unreadNotifications = (Array.isArray(notifications) ? notifications : []).filter(n => !n.is_read).length
+      const availableProducts = (Array.isArray(products) ? products : []).length
 
       setStats({
         totalOrders,
         totalSpent,
         pendingOrders,
         unreadNotifications,
-        availableProducts: products.length,
+        availableProducts,
       })
     } catch (err) {
       console.error('Failed to fetch stats:', err)
+      setStats({
+        totalOrders: 0,
+        totalSpent: 0,
+        pendingOrders: 0,
+        unreadNotifications: 0,
+        availableProducts: 0,
+      })
     } finally {
       setLoading(false)
     }

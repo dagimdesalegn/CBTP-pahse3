@@ -9,7 +9,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $this->authorize('view', User::class);
+        $this->authorize('viewAny', User::class);
 
         $query = User::query();
 

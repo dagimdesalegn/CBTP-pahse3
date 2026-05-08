@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Gate;
+
 abstract class Controller
 {
     protected function authorize($ability, $model = null)
@@ -10,11 +12,7 @@ abstract class Controller
             return true;
         }
 
-        $policy = auth()->user()->{$ability}($model);
-
-        if (!$policy) {
-            abort(403, 'This action is unauthorized.');
-        }
+        Gate::authorize($ability, $model);
 
         return true;
     }

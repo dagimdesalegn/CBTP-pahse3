@@ -11,7 +11,7 @@ class ReportController extends Controller
 {
     public function inventoryReport()
     {
-        $this->authorize('view', Product::class);
+        $this->authorize('viewAny', Product::class);
 
         $products = Product::where('is_active', true)->get();
 
@@ -32,7 +32,7 @@ class ReportController extends Controller
 
     public function ordersReport(Request $request)
     {
-        $this->authorize('view', Order::class);
+        $this->authorize('viewAny', Order::class);
 
         $query = Order::with('user', 'orderItems.product');
 
@@ -66,7 +66,7 @@ class ReportController extends Controller
 
     public function membersReport()
     {
-        $this->authorize('view', User::class);
+        $this->authorize('viewAny', User::class);
 
         $members = User::where('role', 'member')->withCount('orders')->get();
 

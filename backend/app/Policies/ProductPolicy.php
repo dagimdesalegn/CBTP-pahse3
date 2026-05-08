@@ -7,6 +7,11 @@ use App\Models\Product;
 
 class ProductPolicy
 {
+    public function viewAny(User $user): bool
+    {
+        return true;
+    }
+
     public function view(User $user): bool
     {
         return true; // Everyone can view products

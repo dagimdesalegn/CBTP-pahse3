@@ -7,6 +7,11 @@ use App\Models\InventoryLog;
 
 class InventoryLogPolicy
 {
+    public function viewAny(User $user): bool
+    {
+        return $user->role === 'admin';
+    }
+
     public function view(User $user): bool
     {
         return $user->role === 'admin';

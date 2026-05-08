@@ -42,7 +42,7 @@ class InventoryController extends Controller
 
     public function logs(Request $request)
     {
-        $this->authorize('view', InventoryLog::class);
+        $this->authorize('viewAny', InventoryLog::class);
 
         $query = InventoryLog::with('product', 'manager');
 

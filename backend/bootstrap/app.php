@@ -15,7 +15,13 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\TrustProxies::class,
         ]);
 
-        $middleware->statefulApi();
+            // Don't use statefulApi for pure REST API
+            // The API middleware will return JSON for unauthenticated requests
+
+            // Register middleware alias
+            $middleware->alias([
+                'role' => \App\Http\Middleware\RoleMiddleware::class,
+            ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
