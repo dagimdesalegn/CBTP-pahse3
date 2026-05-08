@@ -7,6 +7,11 @@ use App\Models\Product;
 
 class ProductPolicy
 {
+    public function view(User $user): bool
+    {
+        return true; // Everyone can view products
+    }
+
     public function create(User $user): bool
     {
         return in_array($user->role, ['manager', 'admin']);
