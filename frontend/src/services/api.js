@@ -1,33 +1,8 @@
 import axios from 'axios'
 
 const apiUrl = import.meta.env.VITE_API_URL || '/api'
-
-const resolveBaseUrl = () => {
-  if (apiUrl !== '/api') {
-    return apiUrl.endsWith('/api') ? apiUrl : `${apiUrl}/api`
-  }
-
-  if (typeof window === 'undefined') {
-    return '/api'
-  }
-
-  const { protocol, hostname, port } = window.location
-
-  if (hostname.includes('.app.github.dev')) {
-    const hostParts = hostname.split('.')
-    const subdomain = hostParts[0]
-    const updatedSubdomain = subdomain.replace(/-5173$/, '-8000')
-    return `${protocol}//${updatedSubdomain}.${hostParts.slice(1).join('.')}/api`
-  }
-
-  if (port === '5173') {
-    return `${protocol}//${hostname}:8000/api`
-  }
-
-  return '/api'
-}
-
-const baseURL = resolveBaseUrl()
+// If the URL already includes /api, use as-is. Otherwise append /api
+const baseURL = apiUrl.endsWith('/api') || apiUrl === '/api' ? apiUrl : `${apiUrl}/api`
 
 const api = axios.create({
   baseURL: baseURL,

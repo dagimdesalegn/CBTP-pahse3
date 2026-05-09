@@ -83,9 +83,13 @@ export default function Profile() {
 
               <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex items-center mb-8">
-                  <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center text-2xl">
-                    {user?.name?.charAt(0)?.toUpperCase()}
-                  </div>
+                  {user?.avatar_url ? (
+                    <img src={user.avatar_url} alt={user?.name || 'Avatar'} className="w-16 h-16 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center text-2xl">
+                      {user?.name?.charAt(0)?.toUpperCase()}
+                    </div>
+                  )}
                   <div className="ml-4">
                     <h2 className="text-2xl font-bold text-gray-900">{user?.name}</h2>
                     <p className="text-gray-600 text-sm mt-1">{user?.role.toUpperCase()}</p>

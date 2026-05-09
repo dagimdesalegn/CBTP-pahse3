@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, LogOut, Bell, User, Home, Package, ShoppingCart, Users, BarChart3, Settings } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useEffect, useState } from 'react'
-import NotificationsPanel from './NotificationsPanel'
+import NotificationBell from './NotificationBell'
 import api from '../services/api'
 
 export default function Navbar() {
@@ -10,7 +10,6 @@ export default function Navbar() {
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
@@ -79,18 +78,7 @@ export default function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-2">
-            <button
-              onClick={() => setNotificationsOpen(true)}
-              className="hover:bg-slate-200 px-2.5 py-2 rounded-full relative"
-              aria-label="Open notifications"
-            >
-              <Bell size={18} />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
-            </button>
+            <NotificationBell />
             <Link to="/profile" className="hover:bg-slate-200 px-3 py-2 rounded-full flex items-center gap-2 text-sm font-semibold">
               {user?.avatar_url ? (
                 <img
@@ -156,13 +144,7 @@ export default function Navbar() {
         )}
       </div>
 
-      <NotificationsPanel
-        isOpen={notificationsOpen}
-        onClose={() => {
-          setNotificationsOpen(false)
-          setUnreadCount(0)
-        }}
-      />
+      {/* notifications handled inline by NotificationBell dropdown */}
     </nav>
   )
 }
