@@ -96,7 +96,20 @@ export default function OrderManagement() {
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <h3 className="text-lg font-semibold">Order #{order.id}</h3>
-                        <p className="text-blue-100 text-sm">{order.user?.name}</p>
+                        <div className="flex items-center gap-2 text-blue-100 text-sm">
+                          {order.user?.avatar_url ? (
+                            <img
+                              src={order.user.avatar_url}
+                              alt={order.user?.name || 'Member'}
+                              className="w-7 h-7 rounded-full object-cover border border-white/50"
+                            />
+                          ) : (
+                            <div className="w-7 h-7 rounded-full bg-white/20 text-white flex items-center justify-center text-xs font-semibold">
+                              {order.user?.name?.charAt(0)?.toUpperCase()}
+                            </div>
+                          )}
+                          <span>{order.user?.name}</span>
+                        </div>
                       </div>
                       <StatusBadge status={order.status} />
                     </div>
@@ -158,7 +171,22 @@ export default function OrderManagement() {
                   {orders.map(order => (
                     <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 font-semibold text-gray-900">#{order.id}</td>
-                      <td className="px-6 py-4 text-gray-700">{order.user?.name}</td>
+                      <td className="px-6 py-4 text-gray-700">
+                        <div className="flex items-center gap-3">
+                          {order.user?.avatar_url ? (
+                            <img
+                              src={order.user.avatar_url}
+                              alt={order.user?.name || 'Member'}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-semibold">
+                              {order.user?.name?.charAt(0)?.toUpperCase()}
+                            </div>
+                          )}
+                          <span>{order.user?.name}</span>
+                        </div>
+                      </td>
                       <td className="px-6 py-4 text-right font-semibold text-gray-900">${order.total_price}</td>
                       <td className="px-6 py-4">
                         <StatusBadge status={order.status} />

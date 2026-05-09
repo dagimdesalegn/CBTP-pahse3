@@ -1,7 +1,10 @@
-import { ShoppingCart, Heart } from 'lucide-react'
+import { ShoppingCart, Package } from 'lucide-react'
 
-export default function ProductCard({ product, onAddToCart }) {
+export default function ProductCard({ product, onAddToCart, disabledReason }) {
   const handleAddToCart = () => {
+    if (disabledReason) {
+      return
+    }
     onAddToCart(product)
   }
 
@@ -38,15 +41,17 @@ export default function ProductCard({ product, onAddToCart }) {
 
         <button
           onClick={handleAddToCart}
-          disabled={product.quantity === 0}
-          className="w-full flex items-center justify-center gap-2 bg-primary text-white py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          disabled={product.quantity === 0 || Boolean(disabledReason)}
+          title={disabledReason || undefined}
+          className="w-full flex items-center justify-center gap-2 bg-primary text-white py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
         >
           <ShoppingCart size={18} />
-          Add to Cart
+          {disabledReason ? 'Complete Verification' : 'Add to Cart'}
         </button>
+        {disabledReason && (
+          <p className="text-xs text-amber-700 mt-2">Please complete your verification process.</p>
+        )}
       </div>
     </div>
   )
 }
-
-import { Package } from 'lucide-react'

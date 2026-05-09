@@ -133,18 +133,18 @@ export default function Products() {
         <Navbar />
         <main className="flex-1 overflow-auto p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900">Products</h1>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+              <h1 className="text-2xl font-bold text-gray-900">Products</h1>
               <button
                 onClick={() => setShowCartModal(true)}
-                className="relative bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                className="relative bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm font-semibold"
               >
                 <ShoppingCart size={20} />
                 Cart ({cart.length})
               </button>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4 mb-8">
+            <div className="grid md:grid-cols-3 gap-4 mb-6">
               <input
                 type="text"
                 placeholder="Search products..."
@@ -169,12 +169,13 @@ export default function Products() {
                 <p className="text-gray-600 text-lg">No products found</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 {products.map(product => (
                   <ProductCard
                     key={product.id}
                     product={product}
                     onAddToCart={handleAddToCart}
+                    disabledReason={!user?.is_verified ? 'Please complete your verification process.' : ''}
                   />
                 ))}
               </div>

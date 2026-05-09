@@ -38,9 +38,9 @@ export default function Orders() {
         <Navbar />
         <main className="flex-1 overflow-auto p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">My Orders</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">My Orders</h1>
 
-            <div className="mb-6">
+            <div className="mb-5">
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}

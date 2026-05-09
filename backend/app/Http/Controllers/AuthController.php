@@ -30,6 +30,8 @@ class AuthController extends Controller
             ->orWhere('email', $googleUser->getEmail())
             ->first();
 
+        $avatarUrl = $googleUser->getAvatar();
+
         if (!$user) {
             $user = User::create([
                 'name' => $googleUser->getName() ?: $googleUser->getNickname() ?: 'Google User',
@@ -37,6 +39,7 @@ class AuthController extends Controller
                 'google_id' => $googleUser->getId(),
                 'phone' => null,
                 'kebele_id' => 'GOOGLE-' . $googleUser->getId(),
+                'avatar_url' => $avatarUrl,
                 'password' => Hash::make(Str::random(32)),
                 'role' => 'member',
                 'is_verified' => false,
@@ -49,6 +52,9 @@ class AuthController extends Controller
             }
             if (!$user->email) {
                 $user->email = $googleUser->getEmail();
+            }
+            if ($avatarUrl && $user->avatar_url !== $avatarUrl) {
+                $user->avatar_url = $avatarUrl;
             }
             $user->save();
         }

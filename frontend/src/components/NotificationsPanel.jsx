@@ -77,19 +77,19 @@ export default function NotificationsPanel({ isOpen, onClose }) {
       ></div>
 
       {/* Panel */}
-      <div className="relative ml-auto w-full max-w-md h-screen bg-white shadow-xl overflow-y-auto">
+      <div className="relative ml-auto w-full max-w-sm h-screen bg-white shadow-xl overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 border-b-4 border-blue-700">
-          <div className="flex justify-between items-start mb-4">
+        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 border-b-2 border-blue-700">
+          <div className="flex justify-between items-start mb-2">
             <div>
-              <h2 className="text-2xl font-bold">🔔 Notifications</h2>
+              <h2 className="text-lg font-bold">🔔 Notifications</h2>
               {unreadCount > 0 && (
-                <p className="text-blue-100 text-sm mt-1">{unreadCount} unread</p>
+                <p className="text-blue-100 text-xs mt-1">{unreadCount} unread</p>
               )}
             </div>
             <button
               onClick={onClose}
-              className="text-2xl hover:text-blue-200 transition-colors"
+              className="text-xl hover:text-blue-200 transition-colors"
             >
               ✕
             </button>
@@ -106,18 +106,18 @@ export default function NotificationsPanel({ isOpen, onClose }) {
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4">
           {loading ? (
             <div className="flex justify-center items-center h-20">
               <div className="animate-spin text-blue-600 text-2xl">⚙️</div>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-5xl mb-4">📭</p>
-              <p className="text-gray-600 font-medium">No notifications yet</p>
+            <div className="text-center py-10">
+              <p className="text-4xl mb-3">📭</p>
+              <p className="text-gray-600 text-sm font-medium">No notifications yet</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {notifications.map(notification => (
                 <div
                   key={notification.id}
@@ -129,13 +129,13 @@ export default function NotificationsPanel({ isOpen, onClose }) {
                 >
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex-1">
-                      <h3 className={`font-bold ${!notification.is_read ? 'text-blue-900' : 'text-gray-700'}`}>
+                      <h3 className={`text-sm font-bold ${!notification.is_read ? 'text-blue-900' : 'text-gray-700'}`}>
                         {notification.title}
                       </h3>
-                      <p className={`text-sm mt-1 ${!notification.is_read ? 'text-blue-700' : 'text-gray-600'}`}>
+                      <p className={`text-xs mt-1 ${!notification.is_read ? 'text-blue-700' : 'text-gray-600'}`}>
                         {notification.message}
                       </p>
-                      <p className="text-xs text-gray-500 mt-2">
+                      <p className="text-[11px] text-gray-500 mt-2">
                         {new Date(notification.created_at).toLocaleDateString()} at {new Date(notification.created_at).toLocaleTimeString()}
                       </p>
                     </div>
@@ -144,7 +144,7 @@ export default function NotificationsPanel({ isOpen, onClose }) {
                       {!notification.is_read && (
                         <button
                           onClick={() => markAsRead(notification.id)}
-                          className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors p-1"
+                          className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 transition-colors p-1"
                           title="Mark as read"
                         >
                           ✓
@@ -152,7 +152,7 @@ export default function NotificationsPanel({ isOpen, onClose }) {
                       )}
                       <button
                         onClick={() => deleteNotification(notification.id)}
-                        className="text-xs font-semibold text-red-600 hover:text-red-700 transition-colors p-1"
+                        className="text-[11px] font-semibold text-red-600 hover:text-red-700 transition-colors p-1"
                         title="Delete"
                       >
                         ✕

@@ -87,7 +87,22 @@ export default function UserManagement() {
                 <tbody>
                   {users.map(user => (
                     <tr key={user.id} className="border-b hover:bg-gray-50">
-                      <td className="px-4 py-3 font-semibold">{user.name}</td>
+                      <td className="px-4 py-3 font-semibold">
+                        <div className="flex items-center gap-3">
+                          {user.avatar_url ? (
+                            <img
+                              src={user.avatar_url}
+                              alt={user.name}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold">
+                              {user.name?.charAt(0)?.toUpperCase()}
+                            </div>
+                          )}
+                          <span>{user.name}</span>
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-700">{user.email}</td>
                       <td className="px-4 py-3 capitalize">{user.role}</td>
                       <td className="px-4 py-3 text-center">
@@ -153,7 +168,20 @@ export default function UserManagement() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs uppercase tracking-wider text-gray-500">Full Name</p>
-                  <p className="text-base font-semibold text-gray-900">{selectedUser.name}</p>
+                  <div className="mt-2 flex items-center gap-3">
+                    {selectedUser.avatar_url ? (
+                      <img
+                        src={selectedUser.avatar_url}
+                        alt={selectedUser.name}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-base font-bold">
+                        {selectedUser.name?.charAt(0)?.toUpperCase()}
+                      </div>
+                    )}
+                    <p className="text-base font-semibold text-gray-900">{selectedUser.name}</p>
+                  </div>
                 </div>
                 <div className="p-4 bg-blue-50 rounded-xl">
                   <p className="text-xs uppercase tracking-wider text-blue-600">Email Address</p>

@@ -92,7 +92,15 @@ export default function Navbar() {
               )}
             </button>
             <Link to="/profile" className="hover:bg-slate-200 px-3 py-2 rounded-full flex items-center gap-2 text-sm font-semibold">
-              <User size={16} />
+              {user?.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user?.name || 'Profile'}
+                  className="w-6 h-6 rounded-full object-cover"
+                />
+              ) : (
+                <User size={16} />
+              )}
               <span className="max-w-[140px] truncate">{user?.name}</span>
             </Link>
             <button
