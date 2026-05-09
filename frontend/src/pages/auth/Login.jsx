@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Lock, Mail, Store } from 'lucide-react'
+import { Lock, Mail } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import Toast from '../../components/Toast'
 import { Button } from '../../components/ui'
+import BrandLogo from '../../components/BrandLogo'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -37,7 +38,7 @@ export default function Login() {
       <div className="grid min-h-screen lg:grid-cols-[1.1fr_0.9fr]">
         <section className="hidden bg-slate-950 p-10 text-white lg:flex lg:flex-col lg:justify-between">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-amber-400 text-slate-950"><Store size={24} /></span>
+            <span className="flex h-12 w-32 items-center justify-center rounded-lg bg-white/10 p-1.5"><BrandLogo tone="dark" className="h-full w-full" /></span>
             <div>
               <p className="text-2xl font-black">Shemachoch</p>
               <p className="text-sm font-semibold text-slate-400">Professional ecommerce portal</p>
@@ -58,7 +59,7 @@ export default function Login() {
         <main className="flex items-center justify-center p-4">
           <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-xl sm:p-8">
             <div className="mb-8 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-amber-400 text-slate-950 lg:hidden"><Store size={28} /></div>
+              <div className="mx-auto flex h-16 w-40 items-center justify-center rounded-lg bg-white p-2 ring-1 ring-slate-200 lg:hidden"><BrandLogo tone="light" className="h-full w-full" /></div>
               <h1 className="mt-4 text-3xl font-black text-slate-950">Sign in</h1>
               <p className="mt-2 text-sm text-slate-600">Access your Shemachoch workspace.</p>
             </div>

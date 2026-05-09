@@ -1,8 +1,9 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { BarChart3, Bell, Home, LogOut, Mail, Menu, Package, Settings, ShoppingCart, Store, Truck, User, Users, X } from 'lucide-react'
+import { BarChart3, Bell, Home, LogOut, Mail, Menu, Package, Settings, ShoppingCart, Truck, User, Users, X } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useState } from 'react'
 import NotificationBell from './NotificationBell'
+import BrandLogo from './BrandLogo'
 
 export default function Navbar({ cartCount = 0, onCartClick }) {
   const { user, logout } = useAuth()
@@ -51,11 +52,10 @@ export default function Navbar({ cartCount = 0, onCartClick }) {
       <div className="bg-navy text-white">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-3 sm:h-16 sm:gap-3 sm:px-6 lg:px-8">
           <Link to="/dashboard" className="flex min-w-0 items-center gap-2 rounded-lg px-2 py-2 hover:bg-white/10">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-400 text-slate-950 sm:h-10 sm:w-10">
-              <Store size={19} />
+            <span className="flex h-9 w-24 items-center justify-center rounded-lg bg-white/10 p-1 sm:h-10 sm:w-28">
+              <BrandLogo tone="dark" className="h-full w-full" />
             </span>
             <div className="hidden leading-tight sm:block">
-              <p className="text-lg font-black">Shemachoch</p>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-300">{user?.role || 'Portal'}</p>
             </div>
           </Link>
