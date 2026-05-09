@@ -2,7 +2,11 @@ import { Send } from 'lucide-react'
 
 export default function TelegramButton() {
   const handleOpenTelegram = () => {
-    window.open('https://t.me/ShemachochBot?start=' + (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).id : ''), '_blank')
+    const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'shemachoch_bot'
+    const user = localStorage.getItem('user')
+    const startParam = user ? JSON.parse(user).id : ''
+
+    window.open(`https://t.me/${botUsername}?start=${startParam}`, '_blank')
   }
 
   return (
