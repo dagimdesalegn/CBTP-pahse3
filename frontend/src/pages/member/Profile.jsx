@@ -12,6 +12,7 @@ export default function Profile() {
     kebele_id: '',
     coupon_id: '',
     kebele_id_image: null,
+    phone: '',
   })
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState(null)
@@ -39,12 +40,23 @@ export default function Profile() {
       return
     }
 
+    // phone validation - Ethiopian format (international +251, local 0, or bare digits)
+    const phoneRaw = (verificationData.phone || '').trim()
+    if (phoneRaw) {
+      const ethioRegex = /^(\+251[79]\d{8}|0[79]\d{8}|[79]\d{8})$/
+      if (!ethioRegex.test(phoneRaw)) {
+        setToast({ type: 'error', message: 'Invalid phone format. Use +2519xxxxxxxx, 09xxxxxxxx, or 9xxxxxxxx (10-13 digits).' })
+        return
+      }
+    }
+
     setSubmitting(true)
 
     try {
       const formData = new FormData()
       formData.append('kebele_id', verificationData.kebele_id.trim())
       formData.append('coupon_id', verificationData.coupon_id.trim())
+      if (verificationData.phone) formData.append('phone', verificationData.phone.trim())
       formData.append('kebele_id_image', verificationData.kebele_id_image)
 
       const response = await api.post('/users/verification', formData, {
@@ -52,11 +64,8 @@ export default function Profile() {
       })
 
       updateUser(response.data.user)
-      setToast({
-        type: 'success',
-        message: 'Verification submitted. Please wait for admin approval.',
-      })
-      setVerificationData({ kebele_id: '', coupon_id: '', kebele_id_image: null })
+      setToast({ type: 'success', message: 'Verification submitted. Please wait for admin approval.' })
+      setVerificationData({ kebele_id: '', coupon_id: '', kebele_id_image: null, phone: '' })
     } catch (error) {
       const validationErrors = error.response?.data?.errors
         ? Object.values(error.response.data.errors).flat().join(' ')
@@ -186,6 +195,19 @@ export default function Profile() {
                         />
                       </div>
                       <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">🇪🇹 Phone Number (Optional)</label>
+                        <input
+                          type="tel"
+                          name="phone"
+                          value={verificationData.phone}
+                          onChange={handleVerificationChange}
+                          placeholder="0912345678 or 912345678 or +251912345678"
+                          pattern="(\+251[79][0-9]{8}|0[79][0-9]{8}|[79][0-9]{8})"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Format: +2519xxxxxxxx, 09xxxxxxxx, or 9xxxxxxxx</p>
+                      </div>
+                      <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">Kebele ID Image</label>
                         <input
                           type="file"
@@ -199,9 +221,19 @@ export default function Profile() {
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400"
+                        className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 flex items-center justify-center gap-2"
                       >
-                        {submitting ? 'Submitting...' : 'Submit Verification'}
+                        {submitting ? (
+                          <>
+                            <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                            </svg>
+                            Submitting...
+                          </>
+                        ) : (
+                          'Submit Verification'
+                        )}
                       </button>
                     </form>
                   )}

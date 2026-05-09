@@ -107,23 +107,46 @@ class UserController extends Controller
             ],
             'coupon_id' => 'required|string|max:255',
             'kebele_id_image' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'phone' => [
+                'nullable',
+                'string',
+                'max:32',
+                // Ethiopian format: +251[79]xxxxxxxx, 0[79]xxxxxxxx, or [79]xxxxxxxx
+                'regex:/^(\+251[79]\d{8}|0[79]\d{8}|[79]\d{8})$/'
+            ],
         ]);
 
         $path = $request->file('kebele_id_image')->store('verification-ids', 'public');
 
-        $user->update([
+        $updateData = [
             'kebele_id' => $validated['kebele_id'],
             'coupon_id' => $validated['coupon_id'],
             'kebele_id_image_path' => $path,
             'verification_submitted_at' => now(),
             'is_verified' => false,
-        ]);
+        ];
 
-        NotificationService::notifyNewUserRegistration($user);
+        if (!empty($validated['phone'])) {
+            $updateData['phone'] = $validated['phone'];
+        }
 
-        return response()->json([
+        $user->update($updateData);
+
+        // Send response immediately, notification fires after response sent
+        $response = response()->json([
             'message' => 'Verification submitted successfully',
             'user' => $user,
         ]);
+
+        // Queue notification to run after response is sent
+        app()->terminating(function () use ($user) {
+            try {
+                NotificationService::notifyNewUserRegistration($user);
+            } catch (\Exception $e) {
+                \Log::error('Notification send failed: ' . $e->getMessage());
+            }
+        });
+
+        return $response;
     }
 }
