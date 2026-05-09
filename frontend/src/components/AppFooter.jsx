@@ -2,30 +2,32 @@ import { Link, useLocation } from 'react-router-dom'
 import { Home, Package, ShoppingCart, User, Users, BarChart3, Truck } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import BrandLogo from './BrandLogo'
+import { useLanguage } from '../context/LanguageContext'
 
 export default function AppFooter({ cartCount = 0, onCartClick }) {
   const { user } = useAuth()
+  const { t } = useLanguage()
   const location = useLocation()
   const year = new Date().getFullYear()
 
   const navItems = {
     member: [
-      { icon: Home, label: 'Home', path: '/member/dashboard' },
-      { icon: Package, label: 'Products', path: '/member/products' },
-      { icon: ShoppingCart, label: 'Orders', path: '/member/orders' },
-      { icon: User, label: 'Profile', path: '/profile' },
+      { icon: Home, label: t('nav.home'), path: '/member/dashboard' },
+      { icon: Package, label: t('nav.products'), path: '/member/products' },
+      { icon: ShoppingCart, label: t('nav.orders'), path: '/member/orders' },
+      { icon: User, label: t('nav.profile'), path: '/profile' },
     ],
     manager: [
-      { icon: Home, label: 'Home', path: '/manager/dashboard' },
-      { icon: Package, label: 'Products', path: '/manager/products' },
-      { icon: ShoppingCart, label: 'Orders', path: '/manager/orders' },
-      { icon: Truck, label: 'Supply', path: '/manager/suppliers' },
+      { icon: Home, label: t('nav.home'), path: '/manager/dashboard' },
+      { icon: Package, label: t('nav.products'), path: '/manager/products' },
+      { icon: ShoppingCart, label: t('nav.orders'), path: '/manager/orders' },
+      { icon: Truck, label: t('nav.supply'), path: '/manager/suppliers' },
     ],
     admin: [
-      { icon: Home, label: 'Home', path: '/admin/dashboard' },
-      { icon: Users, label: 'Users', path: '/admin/users' },
-      { icon: BarChart3, label: 'Reports', path: '/admin/reports' },
-      { icon: Truck, label: 'Supply', path: '/admin/suppliers' },
+      { icon: Home, label: t('nav.home'), path: '/admin/dashboard' },
+      { icon: Users, label: t('nav.users'), path: '/admin/users' },
+      { icon: BarChart3, label: t('nav.reports'), path: '/admin/reports' },
+      { icon: Truck, label: t('nav.supply'), path: '/admin/suppliers' },
     ],
   }
 
@@ -42,10 +44,10 @@ export default function AppFooter({ cartCount = 0, onCartClick }) {
             </span>
             <div>
               <p className="font-black text-slate-950">Shemachoch</p>
-              <p className="text-xs text-slate-500">Products, orders, inventory, and member service.</p>
+              <p className="text-xs text-slate-500">{t('footer.description')}</p>
             </div>
           </div>
-          <p className="text-xs font-semibold text-slate-500">© {year} Shemachoch. All rights reserved.</p>
+          <p className="text-xs font-semibold text-slate-500">© {year} Shemachoch. {t('footer.rights')}</p>
         </div>
       </footer>
 

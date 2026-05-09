@@ -18,7 +18,11 @@ class ProductController extends Controller
         if ($request->has('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('description', 'like', '%' . $request->search . '%');
+                  ->orWhere('name_am', 'like', '%' . $request->search . '%')
+                  ->orWhere('name_or', 'like', '%' . $request->search . '%')
+                  ->orWhere('description', 'like', '%' . $request->search . '%')
+                  ->orWhere('description_am', 'like', '%' . $request->search . '%')
+                  ->orWhere('description_or', 'like', '%' . $request->search . '%');
             });
         }
 
@@ -44,7 +48,11 @@ class ProductController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'name_am' => 'nullable|string|max:255',
+            'name_or' => 'nullable|string|max:255',
             'description' => 'nullable|string',
+            'description_am' => 'nullable|string',
+            'description_or' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0|lt:price',
             'quantity' => 'required|integer|min:0',
@@ -60,7 +68,11 @@ class ProductController extends Controller
 
         $product = Product::create([
             'name' => $validated['name'],
+            'name_am' => $validated['name_am'] ?? null,
+            'name_or' => $validated['name_or'] ?? null,
             'description' => $validated['description'] ?? null,
+            'description_am' => $validated['description_am'] ?? null,
+            'description_or' => $validated['description_or'] ?? null,
             'price' => $validated['price'],
             'discount_price' => $validated['discount_price'] ?? null,
             'quantity' => $validated['quantity'],
@@ -86,7 +98,11 @@ class ProductController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
+            'name_am' => 'nullable|string|max:255',
+            'name_or' => 'nullable|string|max:255',
             'description' => 'nullable|string',
+            'description_am' => 'nullable|string',
+            'description_or' => 'nullable|string',
             'price' => 'sometimes|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0',
             'quantity' => 'sometimes|integer|min:0',

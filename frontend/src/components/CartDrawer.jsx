@@ -1,20 +1,22 @@
 import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react'
 import { Button, EmptyState, ProductImage } from './ui'
 import { formatBirr } from '../utils/currency'
+import { useLanguage } from '../context/LanguageContext'
 
 export default function CartDrawer({ open, cart, cartTotal, onClose, onRemove, onCheckout, onUpdateQuantity, fulfillmentType = 'pickup', deliveryAddress = '', onFulfillmentChange, onDeliveryAddressChange }) {
+  const { t, productName } = useLanguage()
   if (!open) return null
 
   return (
     <div className="fixed inset-0 z-50">
-      <button className="absolute inset-0 bg-slate-950/55" onClick={onClose} aria-label="Close cart" />
+      <button className="absolute inset-0 bg-slate-950/55" onClick={onClose} aria-label={t('common.close')} />
       <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-900 px-5 py-4 text-white">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">Checkout</p>
-            <h2 className="text-xl font-black">Shopping Cart</h2>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">{t('cart.checkout')}</p>
+            <h2 className="text-xl font-black">{t('cart.shoppingCart')}</h2>
           </div>
-          <button onClick={onClose} className="rounded-lg p-2 hover:bg-white/10" aria-label="Close cart">
+          <button onClick={onClose} className="rounded-lg p-2 hover:bg-white/10" aria-label={t('common.close')}>
             <X size={20} />
           </button>
         </div>
@@ -23,8 +25,8 @@ export default function CartDrawer({ open, cart, cartTotal, onClose, onRemove, o
           <div className="flex flex-1 items-center justify-center p-6">
             <EmptyState
               icon={ShoppingCart}
-              title="Your cart is empty"
-              description="Add products from the marketplace to start a new order."
+              title={t('cart.emptyTitle')}
+              description={t('cart.emptyDesc')}
             />
           </div>
         ) : (
@@ -37,10 +39,10 @@ export default function CartDrawer({ open, cart, cartTotal, onClose, onRemove, o
                     <div className="min-w-0">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <h3 className="truncate text-sm font-bold text-slate-950">{item.product.name}</h3>
-                          <p className="mt-1 text-sm text-slate-500">{formatBirr(item.product.effective_price ?? item.product.discount_price ?? item.product.price)} each</p>
+                          <h3 className="truncate text-sm font-bold text-slate-950">{productName(item.product)}</h3>
+                          <p className="mt-1 text-sm text-slate-500">{formatBirr(item.product.effective_price ?? item.product.discount_price ?? item.product.price)} {t('cart.each')}</p>
                         </div>
-                        <button onClick={() => onRemove(item.product_id)} className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600" aria-label="Remove item">
+                        <button onClick={() => onRemove(item.product_id)} className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600" aria-label={t('cart.remove')}>
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -49,7 +51,7 @@ export default function CartDrawer({ open, cart, cartTotal, onClose, onRemove, o
                           <button
                             onClick={() => onUpdateQuantity?.(item.product_id, Math.max(1, item.quantity - 1))}
                             className="px-2 py-1.5 text-slate-600 hover:bg-slate-50"
-                            aria-label="Decrease quantity"
+                            aria-label={t('cart.decrease')}
                           >
                             <Minus size={14} />
                           </button>
@@ -57,7 +59,7 @@ export default function CartDrawer({ open, cart, cartTotal, onClose, onRemove, o
                           <button
                             onClick={() => onUpdateQuantity?.(item.product_id, Math.min(Number(item.product.quantity), item.quantity + 1))}
                             className="px-2 py-1.5 text-slate-600 hover:bg-slate-50"
-                            aria-label="Increase quantity"
+                            aria-label={t('cart.increase')}
                           >
                             <Plus size={14} />
                           </button>
@@ -73,25 +75,25 @@ export default function CartDrawer({ open, cart, cartTotal, onClose, onRemove, o
             <div className="border-t border-slate-200 bg-slate-50 p-5">
               <div className="mb-4 space-y-3">
                 <label>
-                  <span className="ui-label">Fulfillment</span>
+                  <span className="ui-label">{t('cart.fulfillment')}</span>
                   <select value={fulfillmentType} onChange={(e) => onFulfillmentChange?.(e.target.value)} className="ui-input">
-                    <option value="pickup">Pickup</option>
-                    <option value="delivery">Delivery</option>
+                    <option value="pickup">{t('cart.pickup')}</option>
+                    <option value="delivery">{t('cart.delivery')}</option>
                   </select>
                 </label>
                 {fulfillmentType === 'delivery' && (
                   <label>
-                    <span className="ui-label">Delivery Address</span>
-                    <input value={deliveryAddress} onChange={(e) => onDeliveryAddressChange?.(e.target.value)} placeholder="Bole Sub City, Woreda 03, near Medhanialem" className="ui-input" />
+                    <span className="ui-label">{t('cart.deliveryAddress')}</span>
+                    <input value={deliveryAddress} onChange={(e) => onDeliveryAddressChange?.(e.target.value)} placeholder={t('cart.deliveryPlaceholder')} className="ui-input" />
                   </label>
                 )}
               </div>
               <div className="mb-4 flex items-center justify-between">
-                <span className="font-bold text-slate-700">Subtotal</span>
+                <span className="font-bold text-slate-700">{t('cart.subtotal')}</span>
                 <span className="text-2xl font-black text-slate-950">{formatBirr(cartTotal)}</span>
               </div>
               <Button onClick={onCheckout} className="w-full">
-                Place Order
+                {t('cart.placeOrder')}
               </Button>
             </div>
           </>

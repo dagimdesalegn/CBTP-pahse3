@@ -6,6 +6,7 @@ import Toast from '../../components/Toast'
 import { Button, DataTable, EmptyState, PageHeader, SectionCard, StockBadge } from '../../components/ui'
 import { formatBirr } from '../../utils/currency'
 import api from '../../services/api'
+import { useLanguage } from '../../context/LanguageContext'
 
 export default function ProductManagement() {
   const [products, setProducts] = useState([])
@@ -14,8 +15,9 @@ export default function ProductManagement() {
   const [editingId, setEditingId] = useState(null)
   const [toast, setToast] = useState(null)
   const [suppliers, setSuppliers] = useState([])
-  const [formData, setFormData] = useState({ name: '', description: '', price: '', discount_price: '', quantity: '', category: '', supplier_id: '', image: null })
+  const [formData, setFormData] = useState({ name: '', name_am: '', name_or: '', description: '', description_am: '', description_or: '', price: '', discount_price: '', quantity: '', category: '', supplier_id: '', image: null })
   const [imagePreview, setImagePreview] = useState('')
+  const { t, productName, productDescription, categoryLabel } = useLanguage()
 
   useEffect(() => {
     fetchProducts()
@@ -30,7 +32,7 @@ export default function ProductManagement() {
       setProducts(productsRes.data.data || [])
       setSuppliers(suppliersRes.data.data || [])
     } catch (err) {
-      setToast({ type: 'error', message: 'Failed to fetch products' })
+      setToast({ type: 'error', message: t('manager.fetchFailed') })
     } finally {
       setLoading(false)
     }
@@ -39,7 +41,7 @@ export default function ProductManagement() {
   const resetForm = () => {
     setShowForm(false)
     setEditingId(null)
-    setFormData({ name: '', description: '', price: '', discount_price: '', quantity: '', category: '', supplier_id: '', image: null })
+    setFormData({ name: '', name_am: '', name_or: '', description: '', description_am: '', description_or: '', price: '', discount_price: '', quantity: '', category: '', supplier_id: '', image: null })
     setImagePreview('')
   }
 
@@ -53,10 +55,10 @@ export default function ProductManagement() {
       if (editingId) {
         payload.append('_method', 'PUT')
         await api.post(`/products/${editingId}`, payload)
-        setToast({ type: 'success', message: 'Product updated successfully' })
+        setToast({ type: 'success', message: t('manager.updated') })
       } else {
         await api.post('/products', payload)
-        setToast({ type: 'success', message: 'Product created successfully' })
+        setToast({ type: 'success', message: t('manager.created') })
       }
       fetchProducts()
       resetForm()
@@ -64,14 +66,18 @@ export default function ProductManagement() {
       const validationErrors = err.response?.data?.errors
         ? Object.values(err.response.data.errors).flat().join(' ')
         : null
-      setToast({ type: 'error', message: validationErrors || err.response?.data?.message || err.response?.data?.error || 'Failed to save product' })
+      setToast({ type: 'error', message: validationErrors || err.response?.data?.message || err.response?.data?.error || t('manager.saveFailed') })
     }
   }
 
   const handleEdit = (product) => {
     setFormData({
       name: product.name || '',
+      name_am: product.name_am || '',
+      name_or: product.name_or || '',
       description: product.description || '',
+      description_am: product.description_am || '',
+      description_or: product.description_or || '',
       price: product.price || '',
       discount_price: product.discount_price || '',
       quantity: product.quantity || '',
@@ -91,13 +97,13 @@ export default function ProductManagement() {
   }
 
   const handleDelete = async (id) => {
-    if (confirm('Are you sure you want to delete this product?')) {
+    if (confirm(t('manager.deleteConfirm'))) {
       try {
         await api.delete(`/products/${id}`)
-        setToast({ type: 'success', message: 'Product deleted successfully' })
+        setToast({ type: 'success', message: t('manager.deleted') })
         fetchProducts()
       } catch (err) {
-        setToast({ type: 'error', message: 'Failed to delete product' })
+        setToast({ type: 'error', message: t('manager.deleteFailed') })
       }
     }
   }
@@ -105,9 +111,9 @@ export default function ProductManagement() {
   if (loading) return <LoadingSpinner />
 
   const columns = [
-    { key: 'name', header: 'Product', render: p => <div><p className="font-bold text-slate-950">{p.name}</p><p className="line-clamp-1 text-xs text-slate-500">{p.description}</p></div> },
-    { key: 'category', header: 'Category', render: p => <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">{p.category}</span> },
-    { key: 'supplier', header: 'Supplier', render: p => p.supplier?.company_name || '-' },
+    { key: 'name', header: t('common.product'), render: p => <div><p className="font-bold text-slate-950">{productName(p)}</p><p className="line-clamp-1 text-xs text-slate-500">{productDescription(p)}</p></div> },
+    { key: 'category', header: 'Category', render: p => <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">{categoryLabel(p.category)}</span> },
+    { key: 'supplier', header: t('manager.supplier'), render: p => p.supplier?.company_name || '-' },
     { key: 'price', header: 'Price', cellClassName: 'text-right font-bold text-slate-950', render: p => <div>{formatBirr(p.effective_price ?? p.price)}{p.discount_price && <p className="text-xs text-slate-400 line-through">{formatBirr(p.price)}</p>}</div> },
     { key: 'quantity', header: 'Stock', render: p => <div className="flex items-center gap-2"><span className="font-bold">{p.quantity}</span><StockBadge quantity={p.quantity} /></div> },
     {
@@ -126,50 +132,50 @@ export default function ProductManagement() {
   return (
     <AppLayout>
       <PageHeader
-        eyebrow="Catalog"
-        title="Product Management"
-        description="Maintain the storefront catalog, pricing, categories, and product availability."
+        eyebrow={t('manager.catalog')}
+        title={t('manager.productManagement')}
+        description={t('manager.productManagementDesc')}
         actions={
           <Button onClick={() => { setShowForm(true); setEditingId(null) }}>
             <Plus size={17} />
-            Add Product
+            {t('manager.addProduct')}
           </Button>
         }
       />
 
       {showForm && (
         <SectionCard
-          title={editingId ? 'Edit product' : 'Add new product'}
-          description="Use concise names, clear categories, and accurate stock counts."
-          actions={<Button variant="ghost" onClick={resetForm}><X size={17} /> Close</Button>}
+          title={editingId ? t('manager.editProduct') : t('manager.addNewProduct')}
+          description={t('manager.productFormDesc')}
+          actions={<Button variant="ghost" onClick={resetForm}><X size={17} /> {t('common.close')}</Button>}
           className="mb-6"
         >
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              {['name', 'category', 'price', 'discount_price', 'quantity'].map(field => (
+              {['name', 'name_am', 'name_or', 'category', 'price', 'discount_price', 'quantity'].map(field => (
                 <label key={field}>
-                  <span className="ui-label capitalize">{field.replace('_', ' ')}</span>
+                  <span className="ui-label capitalize">{field === 'name_am' ? t('manager.nameAm') : field === 'name_or' ? t('manager.nameOr') : field.replace('_', ' ')}</span>
                   <input
                     type={field === 'price' || field === 'discount_price' || field === 'quantity' ? 'number' : 'text'}
                     name={field}
                     value={formData[field]}
                     onChange={(e) => setFormData(prev => ({ ...prev, [field]: e.target.value }))}
                     step={field === 'price' || field === 'discount_price' ? '0.01' : undefined}
-                    required={field !== 'discount_price'}
+                    required={!['discount_price', 'name_am', 'name_or'].includes(field)}
                     className="ui-input"
                   />
                 </label>
               ))}
               <label>
-                <span className="ui-label">Supplier</span>
+                <span className="ui-label">{t('manager.supplier')}</span>
                 <select name="supplier_id" value={formData.supplier_id} onChange={(e) => setFormData(prev => ({ ...prev, supplier_id: e.target.value }))} className="ui-input">
-                  <option value="">No supplier</option>
+                  <option value="">{t('manager.noSupplier')}</option>
                   {suppliers.map(supplier => <option key={supplier.id} value={supplier.id}>{supplier.company_name}</option>)}
                 </select>
               </label>
             </div>
             <label>
-              <span className="ui-label">Product Image</span>
+              <span className="ui-label">{t('manager.productImage')}</span>
               <div className="grid gap-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 sm:grid-cols-[160px_1fr] sm:items-center">
                 <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg bg-white">
                   {imagePreview ? (
@@ -180,12 +186,12 @@ export default function ProductManagement() {
                 </div>
                 <div>
                   <input type="file" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp" onChange={handleImageChange} className="ui-input bg-white" />
-                  <p className="mt-2 text-xs font-semibold text-slate-500">Upload a clear product photo. JPG, PNG, GIF, or WebP up to 2MB.</p>
+                  <p className="mt-2 text-xs font-semibold text-slate-500">{t('manager.imageHint')}</p>
                 </div>
               </div>
             </label>
             <label>
-              <span className="ui-label">Description</span>
+              <span className="ui-label">{t('manager.descriptionLabel')}</span>
               <textarea
                 name="description"
                 value={formData.description}
@@ -194,15 +200,37 @@ export default function ProductManagement() {
                 className="ui-input"
               />
             </label>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label>
+                <span className="ui-label">{t('manager.descAm')}</span>
+                <textarea
+                  name="description_am"
+                  value={formData.description_am}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description_am: e.target.value }))}
+                  rows="3"
+                  className="ui-input"
+                />
+              </label>
+              <label>
+                <span className="ui-label">{t('manager.descOr')}</span>
+                <textarea
+                  name="description_or"
+                  value={formData.description_or}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description_or: e.target.value }))}
+                  rows="3"
+                  className="ui-input"
+                />
+              </label>
+            </div>
             <div className="flex gap-2">
-              <Button type="submit"><PackagePlus size={17} /> Save Product</Button>
-              <Button type="button" variant="secondary" onClick={resetForm}>Cancel</Button>
+              <Button type="submit"><PackagePlus size={17} /> {t('manager.saveProduct')}</Button>
+              <Button type="button" variant="secondary" onClick={resetForm}>{t('common.cancel')}</Button>
             </div>
           </form>
         </SectionCard>
       )}
 
-      <DataTable columns={columns} rows={products} empty={<EmptyState title="No products yet" description="Add your first product to populate the storefront." />} />
+      <DataTable columns={columns} rows={products} empty={<EmptyState title={t('manager.noProducts')} description={t('manager.noProductsDesc')} />} />
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
     </AppLayout>
   )

@@ -4,9 +4,12 @@ import { useAuth } from '../hooks/useAuth'
 import { useState } from 'react'
 import NotificationBell from './NotificationBell'
 import BrandLogo from './BrandLogo'
+import LanguageSwitcher from './LanguageSwitcher'
+import { useLanguage } from '../context/LanguageContext'
 
 export default function Navbar({ cartCount = 0, onCartClick }) {
   const { user, logout } = useAuth()
+  const { t } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -18,26 +21,26 @@ export default function Navbar({ cartCount = 0, onCartClick }) {
 
   const navItems = {
     member: [
-      { icon: Home, label: 'Dashboard', path: '/member/dashboard' },
-      { icon: Package, label: 'Products', path: '/member/products' },
-      { icon: ShoppingCart, label: 'Orders', path: '/member/orders' },
-      { icon: Mail, label: 'Messages', path: '/messages' },
+      { icon: Home, label: t('nav.dashboard'), path: '/member/dashboard' },
+      { icon: Package, label: t('nav.products'), path: '/member/products' },
+      { icon: ShoppingCart, label: t('nav.orders'), path: '/member/orders' },
+      { icon: Mail, label: t('nav.messages'), path: '/messages' },
     ],
     manager: [
-      { icon: Home, label: 'Dashboard', path: '/manager/dashboard' },
-      { icon: Package, label: 'Products', path: '/manager/products' },
-      { icon: ShoppingCart, label: 'Orders', path: '/manager/orders' },
-      { icon: Settings, label: 'Inventory', path: '/manager/inventory' },
-      { icon: Truck, label: 'Suppliers', path: '/manager/suppliers' },
-      { icon: Mail, label: 'Messages', path: '/messages' },
+      { icon: Home, label: t('nav.dashboard'), path: '/manager/dashboard' },
+      { icon: Package, label: t('nav.products'), path: '/manager/products' },
+      { icon: ShoppingCart, label: t('nav.orders'), path: '/manager/orders' },
+      { icon: Settings, label: t('nav.inventory'), path: '/manager/inventory' },
+      { icon: Truck, label: t('nav.suppliers'), path: '/manager/suppliers' },
+      { icon: Mail, label: t('nav.messages'), path: '/messages' },
     ],
     admin: [
-      { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
-      { icon: Users, label: 'Users', path: '/admin/users' },
-      { icon: BarChart3, label: 'Reports', path: '/admin/reports' },
-      { icon: Truck, label: 'Suppliers', path: '/admin/suppliers' },
-      { icon: Bell, label: 'Broadcasts', path: '/admin/notifications' },
-      { icon: Mail, label: 'Messages', path: '/messages' },
+      { icon: Home, label: t('nav.dashboard'), path: '/admin/dashboard' },
+      { icon: Users, label: t('nav.users'), path: '/admin/users' },
+      { icon: BarChart3, label: t('nav.reports'), path: '/admin/reports' },
+      { icon: Truck, label: t('nav.suppliers'), path: '/admin/suppliers' },
+      { icon: Bell, label: t('nav.broadcasts'), path: '/admin/notifications' },
+      { icon: Mail, label: t('nav.messages'), path: '/messages' },
     ],
   }
 
@@ -56,7 +59,7 @@ export default function Navbar({ cartCount = 0, onCartClick }) {
               <BrandLogo tone="dark" className="h-full w-full" />
             </span>
             <div className="hidden leading-tight sm:block">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-300">{user?.role || 'Portal'}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-300">{user?.role || t('common.portal')}</p>
             </div>
           </Link>
 
@@ -84,7 +87,7 @@ export default function Navbar({ cartCount = 0, onCartClick }) {
                 className="relative hidden items-center gap-2 rounded-lg bg-amber-400 px-3 py-2 text-sm font-black text-slate-950 hover:bg-amber-300 sm:flex"
               >
                 <ShoppingCart size={17} />
-                Cart
+                {t('nav.cart')}
                 {cartCount > 0 && (
                   <span className="absolute -right-2 -top-2 min-w-5 rounded-full bg-red-600 px-1.5 py-0.5 text-center text-[10px] font-black text-white">
                     {cartCount > 99 ? '99+' : cartCount}
@@ -96,7 +99,7 @@ export default function Navbar({ cartCount = 0, onCartClick }) {
               <button
                 onClick={onCartClick}
                 className="relative rounded-lg border border-amber-400 p-2 text-white transition hover:bg-white/10 sm:hidden"
-                aria-label="Open cart"
+                aria-label={t('nav.cart')}
               >
                 <ShoppingCart size={20} />
                 {cartCount > 0 && (
@@ -106,10 +109,11 @@ export default function Navbar({ cartCount = 0, onCartClick }) {
                 )}
               </button>
             )}
+            <LanguageSwitcher compact className="hidden sm:inline-flex" />
             <NotificationBell />
             <Link to="/profile" className="hidden items-center gap-2 rounded-lg px-2 py-2 text-sm font-bold text-white hover:bg-white/10 md:flex">
               {user?.avatar_url ? (
-                <img src={user.avatar_url} alt={user?.name || 'Profile'} className="h-8 w-8 rounded-full object-cover ring-2 ring-white/20" />
+                <img src={user.avatar_url} alt={user?.name || t('nav.profile')} className="h-8 w-8 rounded-full object-cover ring-2 ring-white/20" />
               ) : (
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
                   <User size={16} />
@@ -117,7 +121,7 @@ export default function Navbar({ cartCount = 0, onCartClick }) {
               )}
               <span className="max-w-[140px] truncate">{user?.name}</span>
             </Link>
-            <button onClick={handleLogout} className="hidden rounded-lg p-2 text-slate-200 hover:bg-white/10 hover:text-white md:block" aria-label="Logout">
+            <button onClick={handleLogout} className="hidden rounded-lg p-2 text-slate-200 hover:bg-white/10 hover:text-white md:block" aria-label={t('nav.logout')}>
               <LogOut size={20} />
             </button>
             <button className="rounded-lg p-2 text-white hover:bg-white/10 lg:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label="Open menu">
@@ -129,8 +133,8 @@ export default function Navbar({ cartCount = 0, onCartClick }) {
 
       <div className="hidden bg-navylight text-white lg:block">
         <div className="mx-auto flex h-10 max-w-7xl items-center gap-4 px-4 text-xs font-semibold sm:px-6 lg:px-8">
-          <span className="text-amber-300">Professional Shemachoch commerce portal</span>
-          <span className="text-slate-300">Orders, inventory, verification, and reports in one workspace</span>
+          <span className="text-amber-300">{t('nav.tagline')}</span>
+          <span className="text-slate-300">{t('nav.subtagline')}</span>
         </div>
       </div>
 
@@ -158,18 +162,21 @@ export default function Navbar({ cartCount = 0, onCartClick }) {
                 }}
                 className="flex items-center justify-between rounded-lg bg-amber-400 px-3 py-3 text-sm font-black text-slate-950 sm:col-span-2"
               >
-                <span className="flex items-center gap-2"><ShoppingCart size={17} /> Cart</span>
+                <span className="flex items-center gap-2"><ShoppingCart size={17} /> {t('nav.cart')}</span>
                 <span>{cartCount}</span>
               </button>
             )}
             <Link to="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-3 text-sm font-bold">
               <User size={17} />
-              Profile
+              {t('nav.profile')}
             </Link>
             <button onClick={handleLogout} className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-3 text-left text-sm font-bold">
               <LogOut size={17} />
-              Logout
+              {t('nav.logout')}
             </button>
+            <div className="sm:col-span-2">
+              <LanguageSwitcher className="w-full [&>select]:w-full" />
+            </div>
           </div>
         </div>
       )}

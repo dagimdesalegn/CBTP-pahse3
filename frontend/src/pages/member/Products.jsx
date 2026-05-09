@@ -9,6 +9,7 @@ import CartDrawer from '../../components/CartDrawer'
 import { Button, EmptyState, PageHeader } from '../../components/ui'
 import api from '../../services/api'
 import { useAuth } from '../../hooks/useAuth'
+import { useLanguage } from '../../context/LanguageContext'
 
 export default function Products() {
   const [products, setProducts] = useState([])
@@ -23,6 +24,7 @@ export default function Products() {
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { t, productName, categoryLabel } = useLanguage()
 
   useEffect(() => {
     fetchProducts()
@@ -40,7 +42,7 @@ export default function Products() {
       setProducts(items)
       setCategories([...new Set(items.map(p => p.category))].filter(Boolean))
     } catch (err) {
-      setToast({ type: 'error', message: 'Failed to fetch products' })
+      setToast({ type: 'error', message: t('products.fetchFailed') })
     } finally {
       setLoading(false)
     }
@@ -48,7 +50,7 @@ export default function Products() {
 
   const handleAddToCart = (product) => {
     if (product.quantity === 0) {
-      setToast({ type: 'error', message: 'This product is out of stock' })
+      setToast({ type: 'error', message: t('products.outOfStock') })
       return
     }
 
@@ -57,14 +59,14 @@ export default function Products() {
       if (existing.quantity < product.quantity) {
         setCart(cart.map(item => item.product_id === product.id ? { ...item, quantity: item.quantity + 1 } : item))
       } else {
-        setToast({ type: 'warning', message: 'Cannot add more of this product' })
+        setToast({ type: 'warning', message: t('products.maxStock') })
         return
       }
     } else {
       setCart([...cart, { product_id: product.id, quantity: 1, product }])
     }
 
-    setToast({ type: 'success', message: `${product.name} added to cart` })
+    setToast({ type: 'success', message: t('products.addedToCart', { name: productName(product) }) })
   }
 
   const updateCartQuantity = (productId, quantity) => {
@@ -77,13 +79,13 @@ export default function Products() {
 
   const handleCheckout = async () => {
     if (!user?.is_verified) {
-      setToast({ type: 'error', message: 'Your account must be verified before placing orders' })
+      setToast({ type: 'error', message: t('cart.verifiedRequired') })
       return
     }
 
     try {
       if (fulfillmentType === 'delivery' && !deliveryAddress.trim()) {
-        setToast({ type: 'error', message: 'Delivery address is required for delivery orders' })
+        setToast({ type: 'error', message: t('cart.deliveryRequired') })
         return
       }
 
@@ -92,12 +94,12 @@ export default function Products() {
         fulfillment_type: fulfillmentType,
         delivery_address: fulfillmentType === 'delivery' ? deliveryAddress.trim() : null,
       })
-      setToast({ type: 'success', message: 'Order placed successfully!' })
+      setToast({ type: 'success', message: t('cart.orderSuccess') })
       setCart([])
       setShowCartModal(false)
       setTimeout(() => navigate('/member/orders'), 1500)
     } catch (err) {
-      setToast({ type: 'error', message: err.response?.data?.error || 'Failed to place order' })
+      setToast({ type: 'error', message: err.response?.data?.error || t('cart.orderFailed') })
     }
   }
 
@@ -107,13 +109,13 @@ export default function Products() {
   return (
     <AppLayout cartCount={cart.length} onCartClick={() => setShowCartModal(true)}>
       <PageHeader
-        eyebrow="Member marketplace"
-        title="Shop Shemachoch essentials"
-        description="Search live inventory, compare member prices, and build your pickup order from available stock."
+        eyebrow={t('products.marketEyebrow')}
+        title={t('products.title')}
+        description={t('products.description')}
         actions={
           <Button onClick={() => setShowCartModal(true)}>
             <ShoppingCart size={17} />
-            Cart ({cart.length})
+            {t('nav.cart')} ({cart.length})
           </Button>
         }
       />
@@ -124,7 +126,7 @@ export default function Products() {
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
               type="text"
-              placeholder="Search products, categories, and descriptions"
+              placeholder={t('products.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="ui-input pl-10"
@@ -133,8 +135,8 @@ export default function Products() {
           <label className="relative">
             <Filter className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <select value={category} onChange={(e) => setCategory(e.target.value)} className="ui-input pl-10">
-              <option value="">All Categories</option>
-              {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+              <option value="">{t('products.allCategories')}</option>
+              {categories.map(cat => <option key={cat} value={cat}>{categoryLabel(cat)}</option>)}
             </select>
           </label>
         </div>
@@ -149,7 +151,7 @@ export default function Products() {
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
-              {cat}
+              {cat === 'All' ? t('products.all') : categoryLabel(cat)}
             </button>
           ))}
         </div>
@@ -158,7 +160,7 @@ export default function Products() {
       {loading ? (
         <LoadingSpinner />
       ) : products.length === 0 ? (
-        <EmptyState title="No products found" description="Try changing your search term or selecting a different category." />
+        <EmptyState title={t('products.noProducts')} description={t('products.noProductsDesc')} />
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
           {products.map(product => (
@@ -166,7 +168,7 @@ export default function Products() {
               key={product.id}
               product={product}
               onAddToCart={handleAddToCart}
-              disabledReason={!user?.is_verified ? 'Please complete your verification process.' : ''}
+              disabledReason={!user?.is_verified ? t('products.verifyBeforeBuying') : ''}
             />
           ))}
         </div>

@@ -1,4 +1,7 @@
+import { useLanguage } from '../context/LanguageContext'
+
 export default function StatusBadge({ status }) {
+  const { statusLabel } = useLanguage()
   const statusStyles = {
     pending: 'bg-amber-100 text-amber-800 ring-amber-200',
     approved: 'bg-sky-100 text-sky-800 ring-sky-200',
@@ -7,17 +10,9 @@ export default function StatusBadge({ status }) {
     cancelled: 'bg-red-100 text-red-800 ring-red-200',
   }
 
-  const statusLabels = {
-    pending: 'Pending',
-    approved: 'Approved',
-    ready: 'Ready for Pickup',
-    completed: 'Completed',
-    cancelled: 'Cancelled',
-  }
-
   return (
     <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ring-1 ${statusStyles[status] || 'bg-slate-100 text-slate-700 ring-slate-200'}`}>
-      {statusLabels[status] || status}
+      {statusLabel(status) || status}
     </span>
   )
 }

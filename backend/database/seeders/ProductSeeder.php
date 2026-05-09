@@ -52,6 +52,67 @@ class ProductSeeder extends Seeder
         return '/storage/products/' . ($images[$name] ?? 'long-grain-rice.png');
     }
 
+    private function translationsFor(string $name, string $category): array
+    {
+        $names = [
+            'White Teff - 5 kg' => ['am' => 'ነጭ ጤፍ - 5 ኪ.ግ', 'or' => 'Xaafii adii - 5 kg'],
+            'Brown Teff - 5 kg' => ['am' => 'ቀይ ጤፍ - 5 ኪ.ግ', 'or' => 'Xaafii diimaa - 5 kg'],
+            'Wheat Flour - 5 kg' => ['am' => 'የስንዴ ዱቄት - 5 ኪ.ግ', 'or' => 'Daakuu qamadii - 5 kg'],
+            'Barley Flour - 3 kg' => ['am' => 'የገብስ ዱቄት - 3 ኪ.ግ', 'or' => 'Daakuu garbuu - 3 kg'],
+            'Long Grain Rice - 5 kg' => ['am' => 'ረጅም የሩዝ እህል - 5 ኪ.ግ', 'or' => 'Ruuzii dheeraa - 5 kg'],
+            'Macaroni Pasta - 500 g' => ['am' => 'ማካሮኒ ፓስታ - 500 ግ', 'or' => 'Paastaa makaaroonii - 500 g'],
+            'Spaghetti - 500 g' => ['am' => 'ስፓጌቲ - 500 ግ', 'or' => 'Ispaageetii - 500 g'],
+            'Red Lentils - 1 kg' => ['am' => 'ቀይ ምስር - 1 ኪ.ግ', 'or' => 'Misira diimaa - 1 kg'],
+            'Green Lentils - 1 kg' => ['am' => 'አረንጓዴ ምስር - 1 ኪ.ግ', 'or' => 'Misira magariisaa - 1 kg'],
+            'Chickpeas - 1 kg' => ['am' => 'ሽምብራ - 1 ኪ.ግ', 'or' => 'Shumburaa - 1 kg'],
+            'Split Peas - 1 kg' => ['am' => 'ክክ አተር - 1 ኪ.ግ', 'or' => 'Atara ciccite - 1 kg'],
+            'Fava Beans - 1 kg' => ['am' => 'ባቄላ - 1 ኪ.ግ', 'or' => 'Baaqelaa - 1 kg'],
+            'Sunflower Cooking Oil - 1 L' => ['am' => 'የሱፍ ዘይት - 1 ሊ', 'or' => 'Zayitii aduu - 1 L'],
+            'Vegetable Cooking Oil - 3 L' => ['am' => 'የአትክልት ዘይት - 3 ሊ', 'or' => 'Zayitii kuduraa - 3 L'],
+            'Sesame Oil - 500 ml' => ['am' => 'የሰሊጥ ዘይት - 500 ሚ.ሊ', 'or' => 'Zayitii sumburaa - 500 ml'],
+            'Refined Sugar - 1 kg' => ['am' => 'ነጭ ስኳር - 1 ኪ.ግ', 'or' => 'Sukkaara qulqullaa’e - 1 kg'],
+            'Brown Sugar - 1 kg' => ['am' => 'ቡናማ ስኳር - 1 ኪ.ግ', 'or' => 'Sukkaara bunaa - 1 kg'],
+            'Pure Honey - 500 g' => ['am' => 'ንጹህ ማር - 500 ግ', 'or' => 'Damma qulqulluu - 500 g'],
+            'Iodized Salt - 1 kg' => ['am' => 'አዮዳይዝድ ጨው - 1 ኪ.ግ', 'or' => 'Soogidda ayoodaayizdii - 1 kg'],
+            'Berbere Spice - 250 g' => ['am' => 'በርበሬ - 250 ግ', 'or' => 'Barbaree - 250 g'],
+            'Shiro Powder - 1 kg' => ['am' => 'የሽሮ ዱቄት - 1 ኪ.ግ', 'or' => 'Daakuu shiroo - 1 kg'],
+            'Mitmita Spice - 100 g' => ['am' => 'ሚጥሚጣ - 100 ግ', 'or' => 'Miixmixaa - 100 g'],
+            'Tomato Paste - 400 g' => ['am' => 'የቲማቲም ሳልሳ - 400 ግ', 'or' => 'Paastii timaatimii - 400 g'],
+            'Ethiopian Coffee Beans - 500 g' => ['am' => 'የኢትዮጵያ የቡና ፍሬ - 500 ግ', 'or' => 'Buna Itoophiyaa - 500 g'],
+            'Ground Coffee - 250 g' => ['am' => 'የተፈጨ ቡና - 250 ግ', 'or' => 'Buna daakame - 250 g'],
+            'Black Tea - 100 bags' => ['am' => 'ጥቁር ሻይ - 100 ፓኬት', 'or' => 'Shaayii gurraacha - 100 boorsaa'],
+            'Powdered Milk - 400 g' => ['am' => 'የወተት ዱቄት - 400 ግ', 'or' => 'Daakuu aannanii - 400 g'],
+            'UHT Milk - 1 L' => ['am' => 'የUHT ወተት - 1 ሊ', 'or' => 'Aannani UHT - 1 L'],
+            'Laundry Detergent - 1 kg' => ['am' => 'የልብስ ሳሙና ዱቄት - 1 ኪ.ግ', 'or' => 'Daakuu uffata miiccaa - 1 kg'],
+            'Dish Soap - 750 ml' => ['am' => 'የዕቃ ማጠቢያ ሳሙና - 750 ሚ.ሊ', 'or' => 'Saamunaa meeshaa dhiqaa - 750 ml'],
+            'Bath Soap - 4 pack' => ['am' => 'የመታጠቢያ ሳሙና - 4 ፓኬት', 'or' => 'Saamunaa qaamaa - 4 pack'],
+            'Toilet Paper - 10 rolls' => ['am' => 'የመጸዳጃ ወረቀት - 10 ሮል', 'or' => 'Waraqaa mana fincaanii - 10 roll'],
+            'Bleach - 1 L' => ['am' => 'ብሊች - 1 ሊ', 'or' => 'Biliichii - 1 L'],
+            'Exercise Books - 10 pack' => ['am' => 'የመልመጃ ደብተሮች - 10 ፓኬት', 'or' => 'Kitaabota barnootaa - 10 pack'],
+            'Ballpoint Pens - 12 pack' => ['am' => 'የኳስ ጫፍ ብዕሮች - 12 ፓኬት', 'or' => 'Qalama boolpooyintii - 12 pack'],
+            'AA Batteries - 4 pack' => ['am' => 'AA ባትሪዎች - 4 ፓኬት', 'or' => 'Baaterii AA - 4 pack'],
+        ];
+
+        $descriptionTemplates = [
+            'Grains' => ['am' => 'ለቤተሰብ የዕለት ተዕለት ምግብ የተዘጋጀ ጥራት ያለው የእህል ምርት።', 'or' => 'Oomisha midhaanii qulqullina qabu, nyaata guyyaa maatiif qophaa’e.'],
+            'Legumes' => ['am' => 'ለወጥ፣ ሾርባ እና የቤት ምግብ የተለየ ጥራጥሬ።', 'or' => 'Midhaan dheedhii nyaata manaa, ittoo, fi shorbaaf filatame.'],
+            'Oils' => ['am' => 'ለመጥበስ፣ ለማብሰል እና ለዕለት ምግብ የሚመች ዘይት።', 'or' => 'Zayitii nyaata guyyaa, bilcheessuu, fi waaduuf mijatu.'],
+            'Sweeteners' => ['am' => 'ለሻይ፣ ለቡና እና ለቤት መጋገሪያ የሚመች ጣፋጭ ምርት።', 'or' => 'Mi’eessituu shaayii, buna, fi daabboo manaa qopheessuuf mijatu.'],
+            'Condiments' => ['am' => 'ለወጥ፣ ሳልሳ እና የተለመዱ የቤት ምግቦች የሚሆን ቅመም።', 'or' => 'Mi’eessituu nyaataa ittoo, soosii, fi nyaata aadaatiif mijatu.'],
+            'Beverages' => ['am' => 'ለቤት እና ለቢሮ አገልግሎት የተዘጋጀ መጠጥ።', 'or' => 'Dhugaatii tajaajila manaafi waajjiraaf qophaa’e.'],
+            'Dairy' => ['am' => 'ለመጠጥ፣ ለሻይ እና ለመጋገሪያ የሚሆን የወተት ምርት።', 'or' => 'Oomisha aannanii dhugaatii, shaayii, fi daabboo qopheessuuf mijatu.'],
+            'Household' => ['am' => 'ለቤት ጽዳት እና ዕለታዊ አጠቃቀም የሚመች ምርት።', 'or' => 'Meeshaa mana keessaa qulqullinaafi fayyadama guyyaa guyyaaf mijatu.'],
+            'Stationery' => ['am' => 'ለትምህርት ቤት፣ ለቢሮ እና ለዕለታዊ ማስታወሻ የሚሆን ምርት።', 'or' => 'Meeshaa barnootaa, waajjira, fi yaadannoo guyyaa guyyaaf mijatu.'],
+        ];
+
+        return [
+            'name_am' => $names[$name]['am'] ?? $name,
+            'name_or' => $names[$name]['or'] ?? $name,
+            'description_am' => $descriptionTemplates[$category]['am'] ?? null,
+            'description_or' => $descriptionTemplates[$category]['or'] ?? null,
+        ];
+    }
+
     public function run(): void
     {
         $supplierByCategory = [
@@ -108,6 +169,7 @@ class ProductSeeder extends Seeder
         foreach ($products as $product) {
             $product['supplier_id'] = $supplierByCategory[$product['category']] ?? null;
             $product['image_path'] = $this->imageFor($product['name']);
+            $product = array_merge($product, $this->translationsFor($product['name'], $product['category']));
 
             if (in_array($product['name'], ['White Teff - 5 kg', 'Sunflower Cooking Oil - 1 L', 'Ground Coffee - 250 g', 'Laundry Detergent - 1 kg'])) {
                 $product['discount_price'] = round($product['price'] * 0.9, 2);
