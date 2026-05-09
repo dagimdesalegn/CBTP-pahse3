@@ -69,7 +69,12 @@ export default function MemberDashboard() {
 
             {!user?.is_verified && (
               <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-lg mb-8">
-                ⚠️ Your account is pending verification. You cannot place orders yet.
+                <p>⚠️ Your account is pending verification. You cannot place orders yet.</p>
+                <p className="text-sm mt-1">
+                  {user?.verification_submitted_at
+                    ? 'Verification submitted. Please wait for approval.'
+                    : 'Submit your kebele ID, coupon ID, and ID image from your profile.'}
+                </p>
               </div>
             )}
 

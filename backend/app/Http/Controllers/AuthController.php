@@ -59,10 +59,15 @@ class AuthController extends Controller
     }
     public function register(Request $request)
     {
+        $kebeleId = trim((string) $request->input('kebele_id'));
+        if ($kebeleId === '') {
+            $kebeleId = 'PENDING-' . (string) Str::uuid();
+        }
+
         $request->merge([
             'name' => trim((string) $request->input('name')),
             'email' => trim((string) $request->input('email')),
-            'kebele_id' => trim((string) $request->input('kebele_id')),
+            'kebele_id' => $kebeleId,
         ]);
 
         $validated = $request->validate([
@@ -109,12 +114,6 @@ class AuthController extends Controller
             return response()->json([
                 'error' => 'Invalid credentials',
             ], 401);
-        }
-
-        if (!$user->is_verified && $user->role === 'member') {
-            return response()->json([
-                'error' => 'Your account is not verified. Please wait for admin verification.',
-            ], 403);
         }
 
         $token = $user->createToken('api-token')->plainTextToken;

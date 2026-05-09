@@ -7,7 +7,6 @@ export default function Register() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    kebele_id: '',
     password: '',
     password_confirmation: '',
   })
@@ -16,6 +15,12 @@ export default function Register() {
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const navigate = useNavigate()
   const { register } = useAuth()
+
+  const handleGoogleLogin = () => {
+    const apiBase = import.meta.env.VITE_API_URL || ''
+    const base = apiBase.endsWith('/api') ? apiBase.slice(0, -4) : apiBase
+    window.location.href = `${base}/api/auth/google/redirect`
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -47,7 +52,6 @@ export default function Register() {
       await register({
         name: formData.name.trim(),
         email: formData.email.trim(),
-        kebele_id: formData.kebele_id.trim(),
         password: formData.password,
         password_confirmation: formData.password_confirmation,
       })
@@ -114,22 +118,6 @@ export default function Register() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="john@example.com"
-                  required
-                  className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 font-medium"
-                />
-              </div>
-
-              {/* Kebele ID Input */}
-              <div>
-                <label className="block text-sm font-bold text-gray-800 mb-2.5">
-                  🪪 Kebele ID
-                </label>
-                <input
-                  type="text"
-                  name="kebele_id"
-                  value={formData.kebele_id}
-                  onChange={handleChange}
-                  placeholder="Your Kebele ID"
                   required
                   className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 font-medium"
                 />
@@ -216,6 +204,7 @@ export default function Register() {
             {/* Google OAuth Button */}
             <button
               type="button"
+              onClick={handleGoogleLogin}
               className="w-full flex items-center justify-center gap-3 px-5 py-3.5 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all font-bold text-gray-800"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">

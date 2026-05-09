@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Services\NotificationService;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -85,6 +86,43 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Telegram account linked',
+            'user' => $user,
+        ]);
+    }
+
+    public function submitVerification(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'member') {
+            return response()->json(['error' => 'Only members can submit verification'], 403);
+        }
+
+        $validated = $request->validate([
+            'kebele_id' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('users', 'kebele_id')->ignore($user->id),
+            ],
+            'coupon_id' => 'required|string|max:255',
+            'kebele_id_image' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        ]);
+
+        $path = $request->file('kebele_id_image')->store('verification-ids', 'public');
+
+        $user->update([
+            'kebele_id' => $validated['kebele_id'],
+            'coupon_id' => $validated['coupon_id'],
+            'kebele_id_image_path' => $path,
+            'verification_submitted_at' => now(),
+            'is_verified' => false,
+        ]);
+
+        NotificationService::notifyNewUserRegistration($user);
+
+        return response()->json([
+            'message' => 'Verification submitted successfully',
             'user' => $user,
         ]);
     }

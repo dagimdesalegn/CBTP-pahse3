@@ -60,6 +60,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     Route::delete('/notifications/{id}', [NotificationController::class, 'delete']);
 
+    // Member verification
+    Route::post('/users/verification', [UserController::class, 'submitVerification']);
+
     // Notifications - Admin only
     Route::middleware('role:admin')->group(function () {
         Route::post('/notifications/broadcast', [NotificationController::class, 'broadcast']);
