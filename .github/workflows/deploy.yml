@@ -73,6 +73,7 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH }}/backend
 
             # Set permissions
+            mkdir -p resources/views
             chmod -R 775 storage bootstrap/cache
 
             # Run migrations
@@ -83,8 +84,8 @@ jobs:
             php artisan route:cache
             php artisan view:cache
 
-            # Restart PHP-FPM (adjust service name if needed)
-            sudo systemctl reload php8.2-fpm || true
+            # Restart PHP-FPM
+            sudo systemctl reload php8.3-fpm || sudo systemctl reload php8.2-fpm || true
 
             # Restart queue worker if applicable
             php artisan queue:restart || true
