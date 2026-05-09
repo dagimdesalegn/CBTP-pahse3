@@ -1,29 +1,32 @@
 import { useEffect, useState } from 'react'
-import Navbar from '../../components/Navbar'
-import Sidebar from '../../components/Sidebar'
+import { Boxes, Save, ShoppingCart, Users } from 'lucide-react'
+import AppLayout from '../../components/AppLayout'
 import LoadingSpinner from '../../components/LoadingSpinner'
+import { Button, DataTable, EmptyState, PageHeader, SectionCard, StatCard } from '../../components/ui'
+import { formatBirr } from '../../utils/currency'
 import api from '../../services/api'
+
+const tabs = [
+  { key: 'inventory', label: 'Inventory', icon: Boxes },
+  { key: 'orders', label: 'Orders', icon: ShoppingCart },
+  { key: 'members', label: 'Members', icon: Users },
+]
 
 export default function Reports() {
   const [activeTab, setActiveTab] = useState('inventory')
   const [reportData, setReportData] = useState(null)
+  const [storedReports, setStoredReports] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchReport()
+    fetchStoredReports()
   }, [activeTab])
 
   const fetchReport = async () => {
     setLoading(true)
     try {
-      let response
-      if (activeTab === 'inventory') {
-        response = await api.get('/reports/inventory')
-      } else if (activeTab === 'orders') {
-        response = await api.get('/reports/orders')
-      } else if (activeTab === 'members') {
-        response = await api.get('/reports/members')
-      }
+      const response = await api.get(`/reports/${activeTab}`)
       setReportData(response.data)
     } catch (err) {
       console.error('Failed to fetch report:', err)
@@ -32,176 +35,142 @@ export default function Reports() {
     }
   }
 
-  if (loading) return <LoadingSpinner />
+  const fetchStoredReports = async () => {
+    try {
+      const response = await api.get('/reports/stored')
+      setStoredReports(response.data.data || [])
+    } catch (err) {
+      console.error('Failed to fetch report history:', err)
+    }
+  }
+
+  const saveReport = async () => {
+    try {
+      await api.post('/reports/stored', { type: activeTab })
+      fetchStoredReports()
+    } catch (err) {
+      console.error('Failed to save report:', err)
+    }
+  }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Navbar />
-        <main className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="max-w-6xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">Reports</h1>
+    <AppLayout>
+      <PageHeader
+        eyebrow="Analytics"
+        title="Reports"
+        description="Review inventory value, order performance, and member activity with operational tables."
+        actions={<Button onClick={saveReport}><Save size={16} /> Save current report</Button>}
+      />
 
-            <div className="flex gap-4 mb-8">
-              {['inventory', 'orders', 'members'].map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    activeTab === tab
-                      ? 'bg-primary text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </div>
-
-            {activeTab === 'inventory' && (
-              <InventoryReport data={reportData} />
-            )}
-
-            {activeTab === 'orders' && (
-              <OrdersReport data={reportData} />
-            )}
-
-            {activeTab === 'members' && (
-              <MembersReport data={reportData} />
-            )}
-          </div>
-        </main>
+      <div className="mb-4 flex gap-2 overflow-x-auto rounded-lg border border-slate-200 bg-white p-2 shadow-sm sm:mb-6">
+        {tabs.map(tab => {
+          const Icon = tab.icon
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-bold transition ${
+                activeTab === tab.key ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Icon size={16} />
+              {tab.label}
+            </button>
+          )
+        })}
       </div>
+
+      {loading ? <LoadingSpinner /> : (
+        <>
+          {activeTab === 'inventory' && <InventoryReport data={reportData} />}
+          {activeTab === 'orders' && <OrdersReport data={reportData} />}
+          {activeTab === 'members' && <MembersReport data={reportData} />}
+          <ReportHistory reports={storedReports} />
+        </>
+      )}
+    </AppLayout>
+  )
+}
+
+function ReportHistory({ reports }) {
+  const columns = [
+    { key: 'type', header: 'Type', render: r => <span className="font-black capitalize text-slate-950">{r.type}</span> },
+    { key: 'generator', header: 'Generated By', render: r => r.generator?.name || 'Admin' },
+    { key: 'summary', header: 'Summary', render: r => Object.entries(r.summary || {}).map(([key, value]) => `${key.replace('_', ' ')}: ${typeof value === 'number' ? value.toLocaleString() : value}`).join(' • ') },
+    { key: 'created_at', header: 'Saved', render: r => new Date(r.created_at).toLocaleString() },
+  ]
+
+  return (
+    <div className="mt-6">
+      <SectionCard title="Stored report history" description="Saved snapshots remain available after the live report changes.">
+        <DataTable columns={columns} rows={reports || []} empty={<EmptyState title="No saved reports" description="Save the current report to build a report history." />} />
+      </SectionCard>
     </div>
   )
 }
 
 function InventoryReport({ data }) {
   if (!data) return null
-
+  const columns = [
+    { key: 'name', header: 'Product', render: p => <p className="font-bold text-slate-950">{p.name}</p> },
+    { key: 'category', header: 'Category' },
+    { key: 'price', header: 'Price', cellClassName: 'text-right', render: p => formatBirr(p.price) },
+    { key: 'quantity', header: 'Stock', cellClassName: 'text-right font-bold' },
+    { key: 'value', header: 'Value', cellClassName: 'text-right font-black text-slate-950', render: p => formatBirr(Number(p.price) * Number(p.quantity)) },
+  ]
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard title="Total Products" value={data.total_products} />
-        <StatCard title="Stock Value" value={`$${(data.total_stock_value || 0).toFixed(2)}`} />
-        <StatCard title="Low Stock Items" value={data.low_stock_count} color="yellow" />
-        <StatCard title="Out of Stock" value={data.out_of_stock_count} color="red" />
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+        <StatCard title="Products" value={data.total_products} icon={Boxes} tone="sky" />
+        <StatCard title="Stock Value" value={formatBirr(data.total_stock_value)} icon={Boxes} tone="emerald" />
+        <StatCard title="Low Stock" value={data.low_stock_count} icon={Boxes} tone="amber" />
+        <StatCard title="Out of Stock" value={data.out_of_stock_count} icon={Boxes} tone="rose" />
       </div>
-
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold mb-4">All Products</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-4 py-2 text-left">Product</th>
-                <th className="px-4 py-2 text-left">Category</th>
-                <th className="px-4 py-2 text-right">Price</th>
-                <th className="px-4 py-2 text-right">Stock</th>
-                <th className="px-4 py-2 text-right">Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.products?.map(product => (
-                <tr key={product.id} className="border-b">
-                  <td className="px-4 py-2">{product.name}</td>
-                  <td className="px-4 py-2">{product.category}</td>
-                  <td className="px-4 py-2 text-right">${product.price}</td>
-                  <td className="px-4 py-2 text-right">{product.quantity}</td>
-                  <td className="px-4 py-2 text-right">${(product.price * product.quantity).toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable columns={columns} rows={data.products || []} empty={<EmptyState title="No products in report" />} />
     </div>
   )
 }
 
 function OrdersReport({ data }) {
   if (!data) return null
-
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard title="Total Orders" value={data.total_orders} />
-        <StatCard title="Total Revenue" value={`$${(data.total_revenue || 0).toFixed(2)}`} color="green" />
-        <StatCard title="Avg Order Value" value={`$${(data.avg_order_value || 0).toFixed(2)}`} />
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
+        <StatCard title="Orders" value={data.total_orders} icon={ShoppingCart} tone="sky" />
+        <StatCard title="Revenue" value={formatBirr(data.total_revenue)} icon={ShoppingCart} tone="emerald" />
+        <StatCard title="Avg Order" value={formatBirr(data.avg_order_value)} icon={ShoppingCart} tone="amber" />
       </div>
-
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold mb-4">Orders by Status</h2>
-        <div className="space-y-2">
+      <SectionCard title="Orders by status">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {Object.entries(data.status_breakdown || {}).map(([status, count]) => (
-            <div key={status} className="flex justify-between items-center">
-              <span className="capitalize font-medium">{status}</span>
-              <span className="text-lg font-bold text-primary">{count}</span>
+            <div key={status} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-bold capitalize text-slate-600">{status}</p>
+              <p className="mt-2 text-2xl font-black text-slate-950">{count}</p>
             </div>
           ))}
         </div>
-      </div>
+      </SectionCard>
     </div>
   )
 }
 
 function MembersReport({ data }) {
   if (!data) return null
-
+  const columns = [
+    { key: 'name', header: 'Name', render: m => <p className="font-bold text-slate-950">{m.name}</p> },
+    { key: 'phone', header: 'Phone' },
+    { key: 'orders_count', header: 'Orders', cellClassName: 'text-center font-bold' },
+    { key: 'total_orders_value', header: 'Total Spent', cellClassName: 'text-right font-black text-slate-950', render: m => formatBirr(m.total_orders_value) },
+    { key: 'is_verified', header: 'Status', cellClassName: 'text-center', render: m => m.is_verified ? 'Verified' : 'Pending' },
+  ]
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard title="Total Members" value={data.total_members} />
-        <StatCard title="Verified" value={data.verified_members} color="green" />
-        <StatCard title="Unverified" value={data.unverified_members} color="yellow" />
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
+        <StatCard title="Members" value={data.total_members} icon={Users} tone="sky" />
+        <StatCard title="Verified" value={data.verified_members} icon={Users} tone="emerald" />
+        <StatCard title="Pending" value={data.unverified_members} icon={Users} tone="amber" />
       </div>
-
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold mb-4">Top Members by Activity</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-4 py-2 text-left">Name</th>
-                <th className="px-4 py-2 text-left">Phone</th>
-                <th className="px-4 py-2 text-center">Orders</th>
-                <th className="px-4 py-2 text-right">Total Spent</th>
-                <th className="px-4 py-2 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.member_activity?.slice(0, 10).map(member => (
-                <tr key={member.id} className="border-b">
-                  <td className="px-4 py-2">{member.name}</td>
-                  <td className="px-4 py-2">{member.phone}</td>
-                  <td className="px-4 py-2 text-center">{member.orders_count}</td>
-                  <td className="px-4 py-2 text-right">${member.total_orders_value.toFixed(2)}</td>
-                  <td className="px-4 py-2 text-center">
-                    {member.is_verified ? '✓ Verified' : '⦿ Unverified'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function StatCard({ title, value, color }) {
-  const colorStyles = {
-    default: 'bg-blue-50 border-blue-200',
-    green: 'bg-green-50 border-green-200',
-    yellow: 'bg-yellow-50 border-yellow-200',
-    red: 'bg-red-50 border-red-200',
-  }
-
-  return (
-    <div className={`${colorStyles[color] || colorStyles.default} border rounded-lg p-4`}>
-      <p className="text-gray-600 text-sm mb-1">{title}</p>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
+      <DataTable columns={columns} rows={(data.member_activity || []).slice(0, 10)} empty={<EmptyState title="No member activity" />} />
     </div>
   )
 }

@@ -13,16 +13,23 @@ class Product extends Model
         'name',
         'description',
         'price',
+        'discount_price',
         'quantity',
         'category',
+        'supplier_id',
         'image_path',
         'is_active',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'discount_price' => 'decimal:2',
         'quantity' => 'integer',
         'is_active' => 'boolean',
+    ];
+
+    protected $appends = [
+        'effective_price',
     ];
 
     public function orderItems()
@@ -33,6 +40,20 @@ class Product extends Model
     public function inventoryLogs()
     {
         return $this->hasMany(InventoryLog::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    public function getEffectivePriceAttribute()
+    {
+        if ($this->discount_price !== null && $this->discount_price < $this->price) {
+            return number_format((float) $this->discount_price, 2, '.', '');
+        }
+
+        return number_format((float) $this->price, 2, '.', '');
     }
 
     public function isOutOfStock()

@@ -55,6 +55,11 @@ class ChapaService
         return config('services.chapa.currency', 'ETB');
     }
 
+    public function isConfigured(): bool
+    {
+        return $this->secretKey() !== '';
+    }
+
     protected function baseUrl()
     {
         return rtrim((string) config('services.chapa.base_url'), '/');

@@ -1,6 +1,6 @@
 {
   "name": "cooperative/store-management",
-  "description": "Consumer Cooperative Store Management System",
+  "description": "Shemachoch commerce management system",
   "type": "project",
   "require": {
     "php": "^8.2",

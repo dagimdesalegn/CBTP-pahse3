@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
-import Navbar from '../../components/Navbar'
-import Sidebar from '../../components/Sidebar'
+import { BarChart3, Bell, Boxes, ShieldCheck, ShoppingCart, UserCheck, Users } from 'lucide-react'
+import AppLayout from '../../components/AppLayout'
 import LoadingSpinner from '../../components/LoadingSpinner'
+import { ActionCard, PageHeader, StatCard } from '../../components/ui'
+import { formatBirr } from '../../utils/currency'
 import api from '../../services/api'
 
 export default function AdminDashboard() {
@@ -39,83 +41,28 @@ export default function AdminDashboard() {
   if (loading) return <LoadingSpinner />
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Navbar />
-        <main className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">Admin Dashboard</h1>
+    <AppLayout>
+      <PageHeader
+        eyebrow="Administration"
+        title="Admin Dashboard"
+        description="High-level store performance, member verification, inventory risk, and broadcast controls."
+      />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 mb-6">
-              <StatCard title="Total Orders" value={stats?.totalOrders} color="blue" />
-              <StatCard title="Total Revenue" value={`$${(stats?.totalRevenue || 0).toFixed(2)}`} color="green" />
-              <StatCard title="Total Products" value={stats?.totalProducts} color="purple" />
-              <StatCard title="Low Stock Items" value={stats?.lowStockCount} color="yellow" />
-              <StatCard title="Total Members" value={stats?.totalMembers} color="blue" />
-              <StatCard title="Verified" value={stats?.verifiedMembers} color="green" />
-              <StatCard title="Unverified" value={stats?.unverifiedMembers} color="red" />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              <ActionCard
-                title="Manage Users"
-                description="Verify members, manage accounts"
-                link="/admin/users"
-                color="blue"
-              />
-              <ActionCard
-                title="View Reports"
-                description="Inventory, orders, and member reports"
-                link="/admin/reports"
-                color="green"
-              />
-              <ActionCard
-                title="Send Notifications"
-                description="Broadcast messages to members"
-                link="/admin/notifications"
-                color="yellow"
-              />
-            </div>
-          </div>
-        </main>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-7">
+        <StatCard title="Orders" value={stats?.totalOrders} icon={ShoppingCart} tone="sky" />
+        <StatCard title="Revenue" value={formatBirr(stats?.totalRevenue)} icon={BarChart3} tone="emerald" />
+        <StatCard title="Products" value={stats?.totalProducts} icon={Boxes} tone="violet" />
+        <StatCard title="Low Stock" value={stats?.lowStockCount} icon={Boxes} tone="amber" />
+        <StatCard title="Members" value={stats?.totalMembers} icon={Users} tone="sky" />
+        <StatCard title="Verified" value={stats?.verifiedMembers} icon={UserCheck} tone="emerald" />
+        <StatCard title="Pending" value={stats?.unverifiedMembers} icon={ShieldCheck} tone="rose" />
       </div>
-    </div>
-  )
-}
 
-function StatCard({ title, value, color }) {
-  const colorStyles = {
-    blue: 'bg-blue-50 border-blue-200',
-    green: 'bg-green-50 border-green-200',
-    yellow: 'bg-yellow-50 border-yellow-200',
-    purple: 'bg-purple-50 border-purple-200',
-    red: 'bg-red-50 border-red-200',
-  }
-
-  return (
-    <div className={`${colorStyles[color]} border rounded-lg p-4`}>
-      <p className="text-gray-600 text-sm mb-1">{title}</p>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-    </div>
-  )
-}
-
-function ActionCard({ title, description, link, color }) {
-  const colorStyles = {
-    blue: 'bg-blue-600 hover:bg-blue-700',
-    green: 'bg-green-600 hover:bg-green-700',
-    purple: 'bg-purple-600 hover:bg-purple-700',
-    yellow: 'bg-yellow-600 hover:bg-yellow-700',
-  }
-
-  return (
-    <a
-      href={link}
-      className={`${colorStyles[color]} text-white rounded-lg p-6 transition-colors`}
-    >
-      <h3 className="text-lg font-bold mb-2">{title}</h3>
-      <p className="text-sm text-opacity-90">{description}</p>
-    </a>
+      <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <ActionCard title="Manage Users" description="Verify members and review account details." to="/admin/users" icon={Users} tone="dark" />
+        <ActionCard title="View Reports" description="Analyze inventory, orders, revenue, and member activity." to="/admin/reports" icon={BarChart3} tone="amber" />
+        <ActionCard title="Broadcast Notifications" description="Send clear operational updates to members." to="/admin/notifications" icon={Bell} tone="sky" />
+      </div>
+    </AppLayout>
   )
 }

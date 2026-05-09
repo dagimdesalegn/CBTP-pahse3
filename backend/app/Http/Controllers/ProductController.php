@@ -9,7 +9,7 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::where('is_active', true);
+        $query = Product::with('supplier')->where('is_active', true);
 
         if ($request->has('category')) {
             $query->where('category', $request->category);
@@ -22,7 +22,7 @@ class ProductController extends Controller
             });
         }
 
-        $products = $query->paginate(12);
+        $products = $query->paginate($request->integer('per_page', 12));
 
         return response()->json($products);
     }
@@ -46,8 +46,10 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0|lt:price',
             'quantity' => 'required|integer|min:0',
             'category' => 'required|string',
+            'supplier_id' => 'nullable|integer|exists:suppliers,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -60,8 +62,10 @@ class ProductController extends Controller
             'name' => $validated['name'],
             'description' => $validated['description'],
             'price' => $validated['price'],
+            'discount_price' => $validated['discount_price'] ?? null,
             'quantity' => $validated['quantity'],
             'category' => $validated['category'],
+            'supplier_id' => $validated['supplier_id'] ?? null,
             'image_path' => $imagePath,
         ]);
 
@@ -84,8 +88,10 @@ class ProductController extends Controller
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
             'price' => 'sometimes|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0',
             'quantity' => 'sometimes|integer|min:0',
             'category' => 'sometimes|string',
+            'supplier_id' => 'nullable|integer|exists:suppliers,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'is_active' => 'sometimes|boolean',
         ]);

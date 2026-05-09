@@ -14,6 +14,6 @@ class NotificationPolicy
 
     public function broadcast(User $user): bool
     {
-        return $user->role === 'admin';
+        return $user->hasAccess('messages');
     }
 }

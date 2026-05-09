@@ -19,7 +19,7 @@ class TelegramController extends Controller
 
             // Handle Telegram bot commands
             if ($text === '/start') {
-                $this->sendTelegramMessage($chatId, 'Welcome to Cooperative Store Management System! Please use the web app to continue.');
+                $this->sendTelegramMessage($chatId, 'Welcome to Shemachoch! Please use the web app to continue.');
             }
         }
 

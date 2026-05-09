@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Notification;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use App\Services\NotificationService;
 
@@ -37,14 +38,14 @@ class OrderController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $orders = $query->with('user', 'orderItems.product')->orderBy('created_at', 'desc')->paginate(20);
+        $orders = $query->with('user', 'orderItems.product', 'payment')->orderBy('created_at', 'desc')->paginate(20);
 
         return response()->json($orders);
     }
 
     public function show($id)
     {
-        $order = Order::with('user', 'orderItems.product')->find($id);
+        $order = Order::with('user', 'orderItems.product', 'payment')->find($id);
 
         if (!$order) {
             return response()->json(['error' => 'Order not found'], 404);
@@ -73,6 +74,8 @@ class OrderController extends Controller
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|integer|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
+            'fulfillment_type' => 'nullable|in:pickup,delivery',
+            'delivery_address' => 'required_if:fulfillment_type,delivery|nullable|string|max:255',
             'notes' => 'nullable|string',
         ]);
 
@@ -95,19 +98,22 @@ class OrderController extends Controller
                 ], 400);
             }
 
-            $itemTotal = $product->price * $item['quantity'];
+            $unitPrice = $product->effective_price;
+            $itemTotal = $unitPrice * $item['quantity'];
             $totalPrice += $itemTotal;
 
             $items[] = [
                 'product_id' => $item['product_id'],
                 'quantity' => $item['quantity'],
-                'unit_price' => $product->price,
+                'unit_price' => $unitPrice,
             ];
         }
 
         $order = Order::create([
             'user_id' => $user->id,
             'status' => Order::STATUS_PENDING,
+            'fulfillment_type' => $validated['fulfillment_type'] ?? 'pickup',
+            'delivery_address' => $validated['delivery_address'] ?? null,
             'total_price' => $totalPrice,
             'notes' => $validated['notes'] ?? null,
         ]);

@@ -9,8 +9,9 @@ use Illuminate\Http\Request;
 
 class ReportController extends Controller
 {
-    public function inventoryReport()
+    public function inventoryReport(Request $request)
     {
+        abort_unless($request->user()->hasAccess('reports'), 403);
         $this->authorize('viewAny', Product::class);
 
         $products = Product::where('is_active', true)->get();
@@ -32,6 +33,7 @@ class ReportController extends Controller
 
     public function ordersReport(Request $request)
     {
+        abort_unless($request->user()->hasAccess('reports'), 403);
         $this->authorize('viewAny', Order::class);
 
         $query = Order::with('user', 'orderItems.product');
@@ -64,8 +66,9 @@ class ReportController extends Controller
         ]);
     }
 
-    public function membersReport()
+    public function membersReport(Request $request)
     {
+        abort_unless($request->user()->hasAccess('reports'), 403);
         $this->authorize('viewAny', User::class);
 
         $members = User::where('role', 'member')->withCount('orders')->get();

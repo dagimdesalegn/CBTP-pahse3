@@ -1,9 +1,18 @@
 import { useEffect, useState } from 'react'
-import Navbar from '../../components/Navbar'
-import Sidebar from '../../components/Sidebar'
+import AppLayout from '../../components/AppLayout'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import OrderCard from '../../components/OrderCard'
+import { EmptyState, PageHeader } from '../../components/ui'
 import api from '../../services/api'
+
+const filters = [
+  { value: '', label: 'All' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'ready', label: 'Ready' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
+]
 
 export default function Orders() {
   const [orders, setOrders] = useState([])
@@ -19,7 +28,6 @@ export default function Orders() {
     try {
       const params = new URLSearchParams()
       if (filter) params.append('status', filter)
-
       const response = await api.get(`/orders?${params}`)
       setOrders(response.data.data || [])
     } catch (err) {
@@ -29,46 +37,37 @@ export default function Orders() {
     }
   }
 
-  if (loading) return <LoadingSpinner />
-
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Navbar />
-        <main className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">My Orders</h1>
+    <AppLayout>
+      <PageHeader
+        eyebrow="Order center"
+        title="My Orders"
+        description="Track request review, approval, pickup readiness, and completed Shemachoch orders."
+      />
 
-            <div className="mb-5">
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="">All Orders</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="ready">Ready</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-
-            {orders.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-600 text-lg">No orders found</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {orders.map(order => (
-                  <OrderCard key={order.id} order={order} />
-                ))}
-              </div>
-            )}
-          </div>
-        </main>
+      <div className="mb-6 flex gap-2 overflow-x-auto rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
+        {filters.map(item => (
+          <button
+            key={item.value}
+            onClick={() => setFilter(item.value)}
+            className={`whitespace-nowrap rounded-md px-4 py-2 text-sm font-bold transition ${
+              filter === item.value ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
-    </div>
+
+      {loading ? (
+        <LoadingSpinner />
+      ) : orders.length === 0 ? (
+        <EmptyState title="No orders found" description="Orders that match this status will appear here." />
+      ) : (
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {orders.map(order => <OrderCard key={order.id} order={order} />)}
+        </div>
+      )}
+    </AppLayout>
   )
 }

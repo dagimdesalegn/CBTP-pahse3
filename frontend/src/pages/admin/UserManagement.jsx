@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import Navbar from '../../components/Navbar'
-import Sidebar from '../../components/Sidebar'
+import { Check, CreditCard, Eye, KeyRound, Search, ShieldCheck, X } from 'lucide-react'
+import AppLayout from '../../components/AppLayout'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import Toast from '../../components/Toast'
+import { Button, DataTable, EmptyState, PageHeader } from '../../components/ui'
+import { formatBirr } from '../../utils/currency'
 import api from '../../services/api'
-import { Check, X } from 'lucide-react'
 
 export default function UserManagement() {
   const [users, setUsers] = useState([])
@@ -12,12 +13,13 @@ export default function UserManagement() {
   const [search, setSearch] = useState('')
   const [toast, setToast] = useState(null)
   const [selectedUser, setSelectedUser] = useState(null)
+  const [walletAmount, setWalletAmount] = useState('')
+  const [walletDescription, setWalletDescription] = useState('')
+  const [accessLevel, setAccessLevel] = useState('')
 
   const apiBase = import.meta.env.VITE_API_URL || ''
   const publicBase = apiBase.endsWith('/api') ? apiBase.slice(0, -4) : apiBase
-  const selectedImageUrl = selectedUser?.kebele_id_image_path
-    ? `${publicBase}/storage/${selectedUser.kebele_id_image_path}`
-    : null
+  const selectedImageUrl = selectedUser?.kebele_id_image_path ? `${publicBase}/storage/${selectedUser.kebele_id_image_path}` : null
 
   useEffect(() => {
     fetchUsers()
@@ -28,7 +30,6 @@ export default function UserManagement() {
     try {
       const params = new URLSearchParams()
       if (search) params.append('search', search)
-
       const response = await api.get(`/users?${params}`)
       setUsers(response.data.data || [])
     } catch (err) {
@@ -41,224 +42,197 @@ export default function UserManagement() {
   const handleVerify = async (userId, isVerified) => {
     try {
       await api.put(`/users/${userId}/verify`, { is_verified: !isVerified })
-      setToast({
-        type: 'success',
-        message: isVerified ? 'User unverified' : 'User verified',
-      })
+      setToast({ type: 'success', message: isVerified ? 'User unverified' : 'User verified' })
       fetchUsers()
     } catch (err) {
       setToast({ type: 'error', message: 'Failed to update user' })
     }
   }
 
+  const openDetails = (user) => {
+    setSelectedUser(user)
+    setAccessLevel(user.access_level || 'super_admin')
+    setWalletAmount('')
+    setWalletDescription('')
+  }
+
+  const updateAccess = async () => {
+    try {
+      await api.put(`/users/${selectedUser.id}/access`, {
+        access_level: selectedUser.role === 'admin' ? accessLevel : selectedUser.access_level,
+        membership_status: selectedUser.membership_status || 'active',
+      })
+      setToast({ type: 'success', message: 'Access updated' })
+      fetchUsers()
+    } catch (err) {
+      setToast({ type: 'error', message: 'Failed to update access' })
+    }
+  }
+
+  const adjustWallet = async () => {
+    try {
+      await api.post('/wallet/adjust', {
+        user_id: selectedUser.id,
+        amount: Number(walletAmount),
+        description: walletDescription || 'Admin wallet adjustment',
+      })
+      setToast({ type: 'success', message: 'Wallet updated' })
+      setWalletAmount('')
+      setWalletDescription('')
+      fetchUsers()
+    } catch (err) {
+      setToast({ type: 'error', message: err.response?.data?.message || 'Failed to adjust wallet' })
+    }
+  }
+
   if (loading) return <LoadingSpinner />
 
-  return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Navbar />
-        <main className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="max-w-6xl mx-auto">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">User Management</h1>
-
-            <div className="mb-6">
-              <input
-                type="text"
-                placeholder="Search users..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
-
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[760px]">
-                <thead className="bg-primary text-white">
-                  <tr>
-                    <th className="px-4 py-3 text-left">Name</th>
-                    <th className="px-4 py-3 text-left">Email</th>
-                    <th className="px-4 py-3 text-left">Role</th>
-                    <th className="px-4 py-3 text-center">Verified</th>
-                    <th className="px-4 py-3 text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map(user => (
-                    <tr key={user.id} className="border-b hover:bg-gray-50">
-                      <td className="px-4 py-3 font-semibold">
-                        <div className="flex items-center gap-3">
-                          {user.avatar_url ? (
-                            <img
-                              src={user.avatar_url}
-                              alt={user.name}
-                              className="w-8 h-8 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold">
-                              {user.name?.charAt(0)?.toUpperCase()}
-                            </div>
-                          )}
-                          <span>{user.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{user.email}</td>
-                      <td className="px-4 py-3 capitalize">{user.role}</td>
-                      <td className="px-4 py-3 text-center">
-                        {user.is_verified ? (
-                          <Check className="text-green-600 mx-auto" size={20} />
-                        ) : (
-                          <X className="text-red-600 mx-auto" size={20} />
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          {user.role === 'member' && (
-                            <button
-                              onClick={() => handleVerify(user.id, user.is_verified)}
-                              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                                user.is_verified
-                                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                                  : 'bg-green-100 text-green-700 hover:bg-green-200'
-                              }`}
-                            >
-                              {user.is_verified ? 'Unverify' : 'Verify'}
-                            </button>
-                          )}
-                          <button
-                            onClick={() => setSelectedUser(user)}
-                            className="px-3 py-1 rounded text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
-                          >
-                            Details
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                </table>
-              </div>
-            </div>
+  const columns = [
+    {
+      key: 'name',
+      header: 'Member',
+      render: user => (
+        <div className="flex items-center gap-3">
+          {user.avatar_url ? (
+            <img src={user.avatar_url} alt={user.name} className="h-9 w-9 rounded-full object-cover" />
+          ) : (
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">{user.name?.charAt(0)?.toUpperCase()}</span>
+          )}
+          <div>
+            <p className="font-bold text-slate-950">{user.name}</p>
+            <p className="text-xs text-slate-500">{user.email}</p>
           </div>
-        </main>
+        </div>
+      ),
+    },
+    { key: 'role', header: 'Role', render: user => <span className="capitalize">{user.role}</span> },
+    {
+      key: 'verified',
+      header: 'Verified',
+      cellClassName: 'text-center',
+      render: user => user.is_verified ? <Check className="mx-auto text-emerald-600" size={20} /> : <X className="mx-auto text-red-600" size={20} />,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: user => (
+        <div className="flex flex-wrap gap-2">
+          {user.role === 'member' && (
+            <Button
+              variant={user.is_verified ? 'danger' : 'success'}
+              className="px-3 py-2"
+              onClick={() => handleVerify(user.id, user.is_verified)}
+            >
+              <ShieldCheck size={15} />
+              {user.is_verified ? 'Unverify' : 'Verify'}
+            </Button>
+          )}
+          <Button variant="secondary" className="px-3 py-2" onClick={() => openDetails(user)}>
+            <Eye size={15} />
+            Details
+          </Button>
+        </div>
+      ),
+    },
+  ]
+
+  return (
+    <AppLayout>
+      <PageHeader
+        eyebrow="Members"
+        title="User Management"
+        description="Search members, verify accounts, and inspect submitted verification documents."
+      />
+
+      <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <label className="relative block max-w-md">
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search users..." className="ui-input pl-10" />
+        </label>
       </div>
+
+      <DataTable columns={columns} rows={users} empty={<EmptyState title="No users found" description="Try a different search term." />} />
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
 
       {selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black bg-opacity-40"
-            onClick={() => setSelectedUser(null)}
-          ></div>
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6 flex justify-between items-start">
+          <button className="absolute inset-0 bg-slate-950/55" onClick={() => setSelectedUser(null)} aria-label="Close details" />
+          <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow-2xl">
+            <div className="flex items-start justify-between bg-slate-900 p-5 text-white">
               <div>
-                <h2 className="text-xl font-bold">Member Details</h2>
-                <p className="text-blue-100 text-sm">Review verification and account information</p>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">Verification review</p>
+                <h2 className="mt-1 text-2xl font-black">Member Details</h2>
               </div>
-              <button
-                onClick={() => setSelectedUser(null)}
-                className="text-xl font-bold hover:text-blue-200"
-              >
-                ✕
-              </button>
+              <button onClick={() => setSelectedUser(null)} className="rounded-lg p-2 hover:bg-white/10"><X size={20} /></button>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs uppercase tracking-wider text-gray-500">Full Name</p>
-                  <div className="mt-2 flex items-center gap-3">
-                    {selectedUser.avatar_url ? (
-                      <img
-                        src={selectedUser.avatar_url}
-                        alt={selectedUser.name}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-base font-bold">
-                        {selectedUser.name?.charAt(0)?.toUpperCase()}
-                      </div>
-                    )}
-                    <p className="text-base font-semibold text-gray-900">{selectedUser.name}</p>
+            <div className="space-y-5 p-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Info label="Full Name" value={selectedUser.name} />
+                <Info label="Email Address" value={selectedUser.email} />
+                <Info label="Phone" value={selectedUser.phone || 'Not provided'} />
+                <Info label="Role" value={selectedUser.role} />
+                <Info label="Access Level" value={selectedUser.access_level || (selectedUser.role === 'admin' ? 'super_admin' : 'Standard')} />
+                <Info label="Wallet Balance" value={formatBirr(selectedUser.account_balance || 0)} />
+                <Info label="Membership" value={selectedUser.membership_status || 'active'} />
+                <Info label="Kebele ID" value={selectedUser.kebele_id?.startsWith('PENDING-') || selectedUser.kebele_id?.startsWith('GOOGLE-') ? 'Not provided' : selectedUser.kebele_id} />
+                <Info label="Coupon ID" value={selectedUser.coupon_id || 'Not provided'} />
+                <Info label="Verification" value={selectedUser.is_verified ? 'Verified' : 'Pending'} />
+                <Info label="Submitted At" value={selectedUser.verification_submitted_at ? new Date(selectedUser.verification_submitted_at).toLocaleString() : 'Not submitted'} />
+              </div>
+              {selectedUser.role === 'admin' && (
+                <div className="rounded-lg border border-slate-200 bg-white p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <KeyRound size={18} className="text-amber-700" />
+                    <p className="text-sm font-black text-slate-950">Admin access level</p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                    <select value={accessLevel} onChange={e => setAccessLevel(e.target.value)} className="ui-input">
+                      <option value="super_admin">Super admin - all features</option>
+                      <option value="operations_admin">Operations admin - users, orders, products, inventory</option>
+                      <option value="report_admin">Report admin - reports and messages</option>
+                      <option value="support_admin">Support admin - users, orders, wallet, messages</option>
+                    </select>
+                    <Button type="button" onClick={updateAccess}>Save access</Button>
                   </div>
                 </div>
-                <div className="p-4 bg-blue-50 rounded-xl">
-                  <p className="text-xs uppercase tracking-wider text-blue-600">Email Address</p>
-                  <p className="text-base font-semibold text-blue-900">{selectedUser.email}</p>
+              )}
+              {selectedUser.role === 'member' && (
+                <div className="rounded-lg border border-slate-200 bg-white p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <CreditCard size={18} className="text-amber-700" />
+                    <p className="text-sm font-black text-slate-950">Wallet adjustment</p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-[160px_1fr_auto]">
+                    <input type="number" value={walletAmount} onChange={e => setWalletAmount(e.target.value)} placeholder="+500 or -100" className="ui-input" />
+                    <input value={walletDescription} onChange={e => setWalletDescription(e.target.value)} placeholder="Reason" className="ui-input" />
+                    <Button type="button" onClick={adjustWallet} disabled={!walletAmount}>Apply</Button>
+                  </div>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs uppercase tracking-wider text-gray-500">Phone</p>
-                  <p className="text-sm font-semibold text-gray-900">{selectedUser.phone || 'Not provided'}</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs uppercase tracking-wider text-gray-500">Role</p>
-                  <p className="text-sm font-semibold text-gray-900 capitalize">{selectedUser.role}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs uppercase tracking-wider text-gray-500">Kebele ID</p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {selectedUser.kebele_id?.startsWith('PENDING-') || selectedUser.kebele_id?.startsWith('GOOGLE-')
-                      ? 'Not provided'
-                      : selectedUser.kebele_id}
-                  </p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs uppercase tracking-wider text-gray-500">Coupon ID</p>
-                  <p className="text-sm font-semibold text-gray-900">{selectedUser.coupon_id || 'Not provided'}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs uppercase tracking-wider text-gray-500">Verification Status</p>
-                  <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold ${
-                    selectedUser.is_verified
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-yellow-100 text-yellow-700'
-                  }`}>
-                    {selectedUser.is_verified ? 'Verified' : 'Pending'}
-                  </span>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs uppercase tracking-wider text-gray-500">Submitted At</p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {selectedUser.verification_submitted_at
-                      ? new Date(selectedUser.verification_submitted_at).toLocaleString()
-                      : 'Not submitted'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-4 bg-gray-50 rounded-xl">
-                <p className="text-xs uppercase tracking-wider text-gray-500">Kebele ID Image</p>
+              )}
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Kebele ID Image</p>
                 {selectedImageUrl ? (
                   <div className="mt-3 space-y-2">
-                    <img
-                      src={selectedImageUrl}
-                      alt="Kebele ID"
-                      className="w-full max-h-64 object-contain rounded-lg border border-gray-200"
-                    />
-                    <a
-                      href={selectedImageUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm font-semibold text-blue-600 hover:text-blue-700"
-                    >
-                      Open full image
-                    </a>
+                    <img src={selectedImageUrl} alt="Kebele ID" className="max-h-72 w-full rounded-lg border border-slate-200 object-contain" />
+                    <a href={selectedImageUrl} target="_blank" rel="noreferrer" className="text-sm font-bold text-amber-700">Open full image</a>
                   </div>
                 ) : (
-                  <p className="text-sm font-semibold text-gray-900">Not uploaded</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-700">Not uploaded</p>
                 )}
               </div>
             </div>
           </div>
         </div>
       )}
+    </AppLayout>
+  )
+}
+
+function Info({ label, value }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-2 text-sm font-bold text-slate-950">{value}</p>
     </div>
   )
 }

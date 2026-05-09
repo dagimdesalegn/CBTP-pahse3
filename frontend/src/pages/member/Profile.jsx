@@ -1,10 +1,11 @@
-import { useState } from 'react'
-import Navbar from '../../components/Navbar'
-import Sidebar from '../../components/Sidebar'
+import { useEffect, useState } from 'react'
+import AppLayout from '../../components/AppLayout'
 import { useAuth } from '../../hooks/useAuth'
-import { Shield, Mail, Phone } from 'lucide-react'
+import { CreditCard, Shield, Mail, Phone } from 'lucide-react'
 import api from '../../services/api'
 import Toast from '../../components/Toast'
+import { SectionCard, StatCard } from '../../components/ui'
+import { formatBirr } from '../../utils/currency'
 
 export default function Profile() {
   const { user, updateUser } = useAuth()
@@ -17,9 +18,14 @@ export default function Profile() {
   const [selectedFileName, setSelectedFileName] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState(null)
+  const [wallet, setWallet] = useState(null)
   const kebeleDisplay = user?.kebele_id?.startsWith('PENDING-') || user?.kebele_id?.startsWith('GOOGLE-')
     ? 'Not provided'
     : user?.kebele_id
+
+  useEffect(() => {
+    api.get('/wallet').then(res => setWallet(res.data)).catch(() => {})
+  }, [])
 
   const handleVerificationChange = (e) => {
     const { name, value, files } = e.target
@@ -92,12 +98,7 @@ export default function Profile() {
 
   return (
     <>
-      <div className="flex h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <Navbar />
-          <main className="flex-1 overflow-auto p-4 md:p-8">
-            <div className="max-w-2xl mx-auto">
+      <AppLayout maxWidth="max-w-2xl">
               <h1 className="text-3xl font-bold text-gray-900 mb-8">My Profile</h1>
 
               <div className="bg-white rounded-lg shadow-md p-6">
@@ -159,6 +160,32 @@ export default function Profile() {
                   </div>
                 </div>
               </div>
+
+              {user?.role === 'member' && (
+                <div className="mt-6 space-y-4">
+                  <StatCard title="Wallet balance" value={formatBirr(wallet?.balance || user?.account_balance || 0)} icon={CreditCard} tone="amber" hint={`Status: ${wallet?.membership_status || user?.membership_status || 'active'}`} />
+                  <SectionCard title="Recent wallet activity">
+                    {wallet?.transactions?.length ? (
+                      <div className="divide-y divide-slate-100">
+                        {wallet.transactions.slice(0, 5).map(transaction => (
+                          <div key={transaction.id} className="flex items-center justify-between gap-3 py-3">
+                            <div>
+                              <p className="text-sm font-bold capitalize text-slate-950">{transaction.type.replace('_', ' ')}</p>
+                              <p className="text-xs text-slate-500">{transaction.description || 'Wallet transaction'}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-black text-slate-950">{formatBirr(transaction.amount)}</p>
+                              <p className="text-xs text-slate-500">{new Date(transaction.created_at).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm font-semibold text-slate-600">No wallet transactions yet.</p>
+                    )}
+                  </SectionCard>
+                </div>
+              )}
 
               {user?.role === 'member' && !user?.is_verified && (
                 <div className="mt-6 space-y-4">
@@ -252,10 +279,7 @@ export default function Profile() {
                   )}
                 </div>
               )}
-            </div>
-          </main>
-        </div>
-      </div>
+      </AppLayout>
 
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
     </>

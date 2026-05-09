@@ -1,6 +1,6 @@
 # 🚀 Quick Start Guide
 
-Get the Cooperative Store Management System up and running in 5 minutes!
+Get Shemachoch up and running in 5 minutes!
 
 ## Prerequisites
 - PHP 8.2+

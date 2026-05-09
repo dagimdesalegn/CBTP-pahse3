@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import Navbar from '../../components/Navbar'
-import Sidebar from '../../components/Sidebar'
+import { Bell, Boxes, Clock, CreditCard, Package, ShoppingCart } from 'lucide-react'
+import AppLayout from '../../components/AppLayout'
+import ProductCard from '../../components/ProductCard'
 import LoadingSpinner from '../../components/LoadingSpinner'
+import Toast from '../../components/Toast'
+import CartDrawer from '../../components/CartDrawer'
+import { Button, EmptyState, PageHeader, StatCard } from '../../components/ui'
+import { formatBirr } from '../../utils/currency'
 import api from '../../services/api'
 import { useAuth } from '../../hooks/useAuth'
-import ProductCard from '../../components/ProductCard'
-import Toast from '../../components/Toast'
-import { ShoppingCart } from 'lucide-react'
 
 export default function MemberDashboard() {
   const { user } = useAuth()
@@ -17,6 +19,8 @@ export default function MemberDashboard() {
   const [cart, setCart] = useState([])
   const [toast, setToast] = useState(null)
   const [showCartModal, setShowCartModal] = useState(false)
+  const [fulfillmentType, setFulfillmentType] = useState('pickup')
+  const [deliveryAddress, setDeliveryAddress] = useState('')
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -32,35 +36,20 @@ export default function MemberDashboard() {
       ])
 
       const orders = ordersRes.data.data || ordersRes.data || []
-      const products = productsRes.data.data || productsRes.data || []
-      setProducts(Array.isArray(products) ? products : [])
+      const productList = productsRes.data.data || productsRes.data || []
       const notifications = notificationsRes.data.data || notificationsRes.data || []
 
-      const totalOrders = (Array.isArray(orders) ? orders : []).length
-      const totalSpent = (Array.isArray(orders) ? orders : []).reduce(
-        (sum, o) => sum + Number(o.total_price || 0),
-        0
-      )
-      const pendingOrders = (Array.isArray(orders) ? orders : []).filter(o => o.status === 'pending').length
-      const unreadNotifications = (Array.isArray(notifications) ? notifications : []).filter(n => !n.is_read).length
-      const availableProducts = (Array.isArray(products) ? products : []).length
-
+      setProducts(Array.isArray(productList) ? productList.slice(0, 8) : [])
       setStats({
-        totalOrders,
-        totalSpent,
-        pendingOrders,
-        unreadNotifications,
-        availableProducts,
+        totalOrders: (Array.isArray(orders) ? orders : []).length,
+        totalSpent: (Array.isArray(orders) ? orders : []).reduce((sum, o) => sum + Number(o.total_price || 0), 0),
+        pendingOrders: (Array.isArray(orders) ? orders : []).filter(o => o.status === 'pending').length,
+        unreadNotifications: (Array.isArray(notifications) ? notifications : []).filter(n => !n.is_read).length,
+        availableProducts: (Array.isArray(productList) ? productList : []).length,
       })
     } catch (err) {
       console.error('Failed to fetch stats:', err)
-      setStats({
-        totalOrders: 0,
-        totalSpent: 0,
-        pendingOrders: 0,
-        unreadNotifications: 0,
-        availableProducts: 0,
-      })
+      setStats({ totalOrders: 0, totalSpent: 0, pendingOrders: 0, unreadNotifications: 0, availableProducts: 0 })
       setProducts([])
     } finally {
       setLoading(false)
@@ -69,235 +58,139 @@ export default function MemberDashboard() {
 
   const handleAddToCart = (product) => {
     if (product.quantity === 0) {
-      setToast({
-        type: 'error',
-        message: 'This product is out of stock',
-      })
+      setToast({ type: 'error', message: 'This product is out of stock' })
       return
     }
 
     const existing = cart.find(item => item.product_id === product.id)
-
     if (existing) {
       if (existing.quantity < product.quantity) {
-        setCart(cart.map(item =>
-          item.product_id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        ))
+        setCart(cart.map(item => item.product_id === product.id ? { ...item, quantity: item.quantity + 1 } : item))
       } else {
-        setToast({
-          type: 'warning',
-          message: 'Cannot add more of this product',
-        })
+        setToast({ type: 'warning', message: 'Cannot add more of this product' })
+        return
       }
     } else {
-      setCart([...cart, {
-        product_id: product.id,
-        quantity: 1,
-        product: product,
-      }])
+      setCart([...cart, { product_id: product.id, quantity: 1, product }])
     }
-
-    setToast({
-      type: 'success',
-      message: `${product.name} added to cart`,
-    })
-  }
-
-  const removeFromCart = (productId) => {
-    setCart(cart.filter(item => item.product_id !== productId))
+    setToast({ type: 'success', message: `${product.name} added to cart` })
   }
 
   const handleCheckout = async () => {
     if (!user?.is_verified) {
-      setToast({
-        type: 'error',
-        message: 'Your account must be verified before placing orders',
-      })
+      setToast({ type: 'error', message: 'Your account must be verified before placing orders' })
       return
     }
 
     try {
-      await api.post('/orders', {
-        items: cart.map(item => ({
-          product_id: item.product_id,
-          quantity: item.quantity,
-        })),
-      })
+      if (fulfillmentType === 'delivery' && !deliveryAddress.trim()) {
+        setToast({ type: 'error', message: 'Delivery address is required for delivery orders' })
+        return
+      }
 
-      setToast({
-        type: 'success',
-        message: 'Order placed successfully!',
+      await api.post('/orders', {
+        items: cart.map(item => ({ product_id: item.product_id, quantity: item.quantity })),
+        fulfillment_type: fulfillmentType,
+        delivery_address: fulfillmentType === 'delivery' ? deliveryAddress.trim() : null,
       })
+      setToast({ type: 'success', message: 'Order placed successfully!' })
       setCart([])
       setShowCartModal(false)
       setTimeout(() => navigate('/member/orders'), 1500)
     } catch (err) {
-      setToast({
-        type: 'error',
-        message: err.response?.data?.error || 'Failed to place order',
-      })
+      setToast({ type: 'error', message: err.response?.data?.error || 'Failed to place order' })
     }
   }
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0)
+  const cartTotal = cart.reduce((sum, item) => sum + (Number(item.product.effective_price ?? item.product.discount_price ?? item.product.price) * item.quantity), 0)
 
   if (loading) return <LoadingSpinner />
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Navbar />
-        <main className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">Welcome, {user?.name}!</h1>
-              <button
-                onClick={() => setShowCartModal(true)}
-                className="relative bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm font-semibold"
-              >
-                <ShoppingCart size={18} />
-                Cart ({cart.length})
-              </button>
-            </div>
+    <AppLayout cartCount={cart.length} onCartClick={() => setShowCartModal(true)}>
+      <PageHeader
+        eyebrow="Member home"
+        title={`Welcome back, ${user?.name || 'member'}`}
+        description="Browse available products, track your order activity, and keep your verification ready for checkout."
+        actions={
+          <>
+            <Button as={Link} to="/member/products" variant="secondary">
+              <Package size={17} />
+              Browse Products
+            </Button>
+            <Button onClick={() => setShowCartModal(true)}>
+              <ShoppingCart size={17} />
+              Cart ({cart.length})
+            </Button>
+          </>
+        }
+      />
 
-            {!user?.is_verified && (
-              <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-lg mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-semibold">⚠️ Your account is pending verification.</p>
-                  <p className="text-sm">
-                    {user?.verification_submitted_at
-                      ? 'Verification submitted. Please wait for approval.'
-                      : 'Submit your kebele ID, coupon ID, and ID image to get verified.'}
-                  </p>
-                </div>
-                {!user?.verification_submitted_at && (
-                  <Link
-                    to="/profile"
-                    className="inline-flex items-center justify-center bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
-                  >
-                    Submit Verification
-                  </Link>
-                )}
-              </div>
+      {!user?.is_verified && (
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-5 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-lg font-black text-amber-950">Verification required for checkout</h2>
+              <p className="mt-1 text-sm text-amber-800">
+                {user?.verification_submitted_at
+                  ? 'Your verification was submitted and is waiting for admin approval.'
+                  : 'Submit your kebele ID, coupon ID, and ID image before placing orders.'}
+              </p>
+            </div>
+            {!user?.verification_submitted_at && (
+              <Button as={Link} to="/profile" variant="dark">Submit Verification</Button>
             )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <StatCard title="Total Orders" value={stats?.totalOrders || 0} color="blue" />
-              <StatCard title="Total Spent" value={`$${Number(stats?.totalSpent || 0).toFixed(2)}`} color="green" />
-              <StatCard title="Pending Orders" value={stats?.pendingOrders || 0} color="yellow" />
-              <StatCard title="Available Products" value={stats?.availableProducts || 0} color="purple" />
-              <StatCard title="Unread Notifications" value={stats?.unreadNotifications || 0} color="red" />
-            </div>
-
-            <div className="mt-8">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Available Products</h2>
-                <Link to="/member/products" className="text-sm font-semibold text-blue-600 hover:text-blue-700">
-                  View all
-                </Link>
-              </div>
-
-              {products.length === 0 ? (
-                <div className="text-center py-10 bg-white rounded-lg shadow-sm border border-slate-200">
-                  <p className="text-gray-600">No products available right now.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                  {products.map(product => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      onAddToCart={handleAddToCart}
-                      disabledReason={!user?.is_verified ? 'Please complete your verification process.' : ''}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
-        </main>
-      </div>
-
-      {showCartModal && (
-        <CartModal
-          cart={cart}
-          cartTotal={cartTotal}
-          onClose={() => setShowCartModal(false)}
-          onRemove={removeFromCart}
-          onCheckout={handleCheckout}
-        />
+        </div>
       )}
 
-      {toast && <Toast {...toast} onClose={() => setToast(null)} />}
-    </div>
-  )
-}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-5">
+        <StatCard title="Orders" value={stats?.totalOrders || 0} icon={ShoppingCart} tone="sky" />
+        <StatCard title="Total Spent" value={formatBirr(stats?.totalSpent)} icon={CreditCard} tone="emerald" />
+        <StatCard title="Pending" value={stats?.pendingOrders || 0} icon={Clock} tone="amber" />
+        <StatCard title="Products" value={stats?.availableProducts || 0} icon={Boxes} tone="violet" />
+        <StatCard title="Unread" value={stats?.unreadNotifications || 0} icon={Bell} tone="rose" />
+      </div>
 
-function StatCard({ title, value, color }) {
-  const colorStyles = {
-    blue: 'bg-blue-50 border-blue-200',
-    green: 'bg-green-50 border-green-200',
-    yellow: 'bg-yellow-50 border-yellow-200',
-    purple: 'bg-purple-50 border-purple-200',
-    red: 'bg-red-50 border-red-200',
-  }
-
-  return (
-    <div className={`${colorStyles[color]} border rounded-lg p-6`}>
-      <p className="text-gray-600 text-sm mb-2">{title}</p>
-      <p className="text-3xl font-bold text-gray-900">{value}</p>
-    </div>
-  )
-}
-
-function CartModal({ cart, cartTotal, onClose, onRemove, onCheckout }) {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-96 overflow-y-auto">
-        <div className="sticky top-0 bg-blue-600 text-white p-4 flex justify-between items-center">
-          <h2 className="text-lg font-bold">Shopping Cart</h2>
-          <button onClick={onClose} className="text-2xl font-bold">×</button>
+      <section className="mt-8">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-black text-slate-950">Featured marketplace</h2>
+            <p className="text-sm text-slate-600">Quick add popular available products to your pickup order.</p>
+          </div>
+          <Link to="/member/products" className="text-sm font-bold text-amber-700 hover:text-amber-800">View all</Link>
         </div>
 
-        {cart.length === 0 ? (
-          <div className="p-4 text-center text-gray-600">Your cart is empty</div>
+        {products.length === 0 ? (
+          <EmptyState title="No products available" description="The store catalog is empty right now." />
         ) : (
-          <>
-            <div className="p-4 space-y-3">
-              {cart.map(item => (
-                <div key={item.product_id} className="flex justify-between items-center border-b pb-2">
-                  <div>
-                    <p className="font-semibold">{item.product.name}</p>
-                    <p className="text-sm text-gray-600">${item.product.price} × {item.quantity}</p>
-                  </div>
-                  <button
-                    onClick={() => onRemove(item.product_id)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="border-t p-4">
-              <div className="flex justify-between items-center mb-4">
-                <span className="font-bold">Total:</span>
-                <span className="text-2xl font-bold text-blue-600">${cartTotal.toFixed(2)}</span>
-              </div>
-              <button
-                onClick={onCheckout}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 font-bold"
-              >
-                Checkout
-              </button>
-            </div>
-          </>
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+            {products.map(product => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onAddToCart={handleAddToCart}
+                disabledReason={!user?.is_verified ? 'Please complete your verification process.' : ''}
+              />
+            ))}
+          </div>
         )}
-      </div>
-    </div>
+      </section>
+
+      <CartDrawer
+        open={showCartModal}
+        cart={cart}
+        cartTotal={cartTotal}
+        onClose={() => setShowCartModal(false)}
+        onRemove={(productId) => setCart(cart.filter(item => item.product_id !== productId))}
+        onCheckout={handleCheckout}
+        onUpdateQuantity={(productId, quantity) => setCart(cart.map(item => item.product_id === productId ? { ...item, quantity } : item))}
+        fulfillmentType={fulfillmentType}
+        deliveryAddress={deliveryAddress}
+        onFulfillmentChange={setFulfillmentType}
+        onDeliveryAddressChange={setDeliveryAddress}
+      />
+      {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+    </AppLayout>
   )
 }

@@ -17,10 +17,12 @@ import ManagerDashboard from './pages/manager/ManagerDashboard'
 import ProductManagement from './pages/manager/ProductManagement'
 import OrderManagement from './pages/manager/OrderManagement'
 import InventoryManagement from './pages/manager/InventoryManagement'
+import SupplierManagement from './pages/manager/SupplierManagement'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import UserManagement from './pages/admin/UserManagement'
 import Reports from './pages/admin/Reports'
 import AdminNotifications from './pages/admin/AdminNotifications'
+import Messages from './pages/messages/Messages'
 
 function ProtectedRoute({ children, requiredRole }) {
   const { user, loading } = useContext(AuthContext)
@@ -115,6 +117,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/messages"
+        element={
+          <ProtectedRoute>
+            <Messages />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Manager Routes */}
       <Route
@@ -146,6 +156,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute requiredRole="manager">
             <InventoryManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/manager/suppliers"
+        element={
+          <ProtectedRoute requiredRole="manager">
+            <SupplierManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/suppliers"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <SupplierManagement />
           </ProtectedRoute>
         }
       />

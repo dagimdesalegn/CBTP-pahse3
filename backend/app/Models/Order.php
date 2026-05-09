@@ -12,6 +12,8 @@ class Order extends Model
     protected $fillable = [
         'user_id',
         'status',
+        'fulfillment_type',
+        'delivery_address',
         'total_price',
         'notes',
     ];
@@ -42,5 +44,10 @@ class Order extends Model
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class)->latestOfMany();
     }
 }

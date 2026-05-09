@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import Navbar from '../../components/Navbar'
-import Sidebar from '../../components/Sidebar'
+import { Edit2, Save, X } from 'lucide-react'
+import AppLayout from '../../components/AppLayout'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import Toast from '../../components/Toast'
+import { Button, DataTable, EmptyState, PageHeader, StockBadge } from '../../components/ui'
 import api from '../../services/api'
 
 export default function InventoryManagement() {
@@ -35,10 +36,7 @@ export default function InventoryManagement() {
     }
 
     try {
-      await api.put(`/inventory/${productId}`, {
-        quantity: parseInt(quantity),
-        reason: reason,
-      })
+      await api.put(`/inventory/${productId}`, { quantity: parseInt(quantity), reason })
       setToast({ type: 'success', message: 'Inventory updated' })
       setEditingId(null)
       setQuantity('')
@@ -51,93 +49,37 @@ export default function InventoryManagement() {
 
   if (loading) return <LoadingSpinner />
 
-  return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Navbar />
-        <main className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="max-w-6xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">Inventory Management</h1>
+  const columns = [
+    { key: 'name', header: 'Product', render: p => <p className="font-bold text-slate-950">{p.name}</p> },
+    { key: 'quantity', header: 'Current Stock', cellClassName: 'font-bold text-slate-950', render: p => p.quantity },
+    { key: 'status', header: 'Status', render: p => <StockBadge quantity={p.quantity} /> },
+    {
+      key: 'action',
+      header: 'Action',
+      render: p => editingId === p.id ? (
+        <div className="flex min-w-[420px] items-center gap-2">
+          <input type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="ui-input w-24" />
+          <input type="text" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason" className="ui-input" />
+          <Button className="px-3 py-2" onClick={() => handleUpdateInventory(p.id)}><Save size={15} /></Button>
+          <Button variant="secondary" className="px-3 py-2" onClick={() => setEditingId(null)}><X size={15} /></Button>
+        </div>
+      ) : (
+        <Button variant="secondary" className="px-3 py-2" onClick={() => { setEditingId(p.id); setQuantity(p.quantity.toString()); setReason('') }}>
+          <Edit2 size={15} /> Adjust
+        </Button>
+      ),
+    },
+  ]
 
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-primary text-white">
-                  <tr>
-                    <th className="px-4 py-3 text-left">Product</th>
-                    <th className="px-4 py-3 text-right">Current Stock</th>
-                    <th className="px-4 py-3 text-left">Status</th>
-                    <th className="px-4 py-3 text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map(product => (
-                    <tr key={product.id} className="border-b hover:bg-gray-50">
-                      <td className="px-4 py-3 font-semibold">{product.name}</td>
-                      <td className="px-4 py-3 text-right">{product.quantity}</td>
-                      <td className="px-4 py-3">
-                        {product.quantity === 0 && (
-                          <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm">Out of Stock</span>
-                        )}
-                        {product.quantity > 0 && product.quantity <= 10 && (
-                          <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">Low Stock</span>
-                        )}
-                        {product.quantity > 10 && (
-                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">In Stock</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {editingId === product.id ? (
-                          <div className="flex gap-2 items-center">
-                            <input
-                              type="number"
-                              value={quantity}
-                              onChange={(e) => setQuantity(e.target.value)}
-                              placeholder="New quantity"
-                              className="px-2 py-1 border border-gray-300 rounded text-sm w-20"
-                            />
-                            <input
-                              type="text"
-                              value={reason}
-                              onChange={(e) => setReason(e.target.value)}
-                              placeholder="Reason"
-                              className="px-2 py-1 border border-gray-300 rounded text-sm"
-                            />
-                            <button
-                              onClick={() => handleUpdateInventory(product.id)}
-                              className="bg-green-600 text-white px-2 py-1 rounded text-sm hover:bg-green-700"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={() => setEditingId(null)}
-                              className="bg-gray-400 text-white px-2 py-1 rounded text-sm hover:bg-gray-500"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setEditingId(product.id)
-                              setQuantity(product.quantity.toString())
-                              setReason('')
-                            }}
-                            className="text-blue-600 hover:underline"
-                          >
-                            Edit
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </main>
-      </div>
+  return (
+    <AppLayout>
+      <PageHeader
+        eyebrow="Inventory"
+        title="Inventory Management"
+        description="Adjust stock quantities and capture a reason for every inventory movement."
+      />
+      <DataTable columns={columns} rows={products} empty={<EmptyState title="No inventory records" description="Products will appear here after they are created." />} />
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
-    </div>
+    </AppLayout>
   )
 }

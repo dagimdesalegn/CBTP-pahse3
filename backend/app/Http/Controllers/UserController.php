@@ -34,6 +34,8 @@ class UserController extends Controller
 
     public function show($id)
     {
+        $this->authorize('view', User::class);
+
         $user = User::find($id);
 
         if (!$user) {
@@ -41,6 +43,25 @@ class UserController extends Controller
         }
 
         return response()->json($user);
+    }
+
+    public function updateAccess(Request $request, $id)
+    {
+        abort_unless($request->user()->hasAccess('users'), 403);
+
+        $validated = $request->validate([
+            'access_level' => 'nullable|in:super_admin,operations_admin,report_admin,support_admin',
+            'membership_status' => 'nullable|in:active,suspended,inactive',
+        ]);
+
+        $user = User::findOrFail($id);
+
+        $user->update($validated);
+
+        return response()->json([
+            'message' => 'User access updated',
+            'user' => $user,
+        ]);
     }
 
     public function verify(Request $request, $id)

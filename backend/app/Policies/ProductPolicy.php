@@ -19,16 +19,16 @@ class ProductPolicy
 
     public function create(User $user): bool
     {
-        return in_array($user->role, ['manager', 'admin']);
+        return $user->role === 'manager' || $user->hasAccess('products');
     }
 
     public function update(User $user): bool
     {
-        return in_array($user->role, ['manager', 'admin']);
+        return $user->role === 'manager' || $user->hasAccess('products');
     }
 
     public function delete(User $user): bool
     {
-        return $user->role === 'admin';
+        return $user->hasAccess('products');
     }
 }

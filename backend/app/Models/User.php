@@ -21,7 +21,10 @@ class User extends Authenticatable
         'coupon_id',
         'verification_submitted_at',
         'role',
+        'access_level',
         'is_verified',
+        'account_balance',
+        'membership_status',
         'telegram_id',
         'google_id',
         'avatar_url',
@@ -35,7 +38,33 @@ class User extends Authenticatable
     protected $casts = [
         'password' => 'hashed',
         'is_verified' => 'boolean',
+        'account_balance' => 'decimal:2',
     ];
+
+    public function hasAccess(string $permission): bool
+    {
+        if ($this->role === 'manager') {
+            return in_array($permission, ['products', 'orders', 'inventory', 'suppliers', 'messages'], true);
+        }
+
+        if ($this->role !== 'admin') {
+            return false;
+        }
+
+        $level = $this->access_level ?: 'super_admin';
+
+        if ($level === 'super_admin') {
+            return true;
+        }
+
+        $permissions = [
+            'operations_admin' => ['products', 'orders', 'inventory', 'suppliers', 'users', 'messages', 'wallet'],
+            'report_admin' => ['reports', 'messages'],
+            'support_admin' => ['users', 'orders', 'messages', 'wallet'],
+        ];
+
+        return in_array($permission, $permissions[$level] ?? [], true);
+    }
 
     public function orders()
     {
@@ -50,5 +79,25 @@ class User extends Authenticatable
     public function inventoryLogs()
     {
         return $this->hasMany(InventoryLog::class, 'manager_id');
+    }
+
+    public function walletTransactions()
+    {
+        return $this->hasMany(WalletTransaction::class);
+    }
+
+    public function sentMessages()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    public function receivedMessages()
+    {
+        return $this->hasMany(Message::class, 'recipient_id');
+    }
+
+    public function storedReports()
+    {
+        return $this->hasMany(StoredReport::class, 'generated_by');
     }
 }

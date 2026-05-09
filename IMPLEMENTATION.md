@@ -1,6 +1,6 @@
 # 📋 Implementation Checklist
 
-This document tracks all implemented features for the Cooperative Store Management System.
+This document tracks all implemented features for Shemachoch.
 
 ## ✅ Backend (Laravel 11)
 

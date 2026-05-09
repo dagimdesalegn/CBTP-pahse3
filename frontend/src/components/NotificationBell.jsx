@@ -56,7 +56,7 @@ export default function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className={`relative p-2 hover:bg-gray-100 rounded-lg transition-all ${unreadCount > 0 ? 'ring-2 ring-yellow-300 ring-offset-1' : ''}`}
+        className={`relative rounded-lg p-2 text-white transition-all hover:bg-white/10 ${unreadCount > 0 ? 'ring-2 ring-amber-300 ring-offset-1 ring-offset-slate-900' : ''}`}
         aria-label="Open notifications"
       >
         <Bell size={20} />
@@ -68,13 +68,13 @@ export default function NotificationBell() {
       </button>
 
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-y-auto">
-          <div className="flex items-center justify-between px-4 py-2 border-b">
+        <div className="absolute right-0 z-50 mt-2 max-h-96 w-80 overflow-y-auto rounded-lg border border-slate-200 bg-white text-slate-900 shadow-xl">
+          <div className="flex items-center justify-between border-b px-4 py-3">
             <div className="flex items-center gap-2">
               <Bell size={16} />
               <span className="font-semibold">Notifications</span>
             </div>
-            <button onClick={() => { markAll(); setShowDropdown(false) }} className="text-xs text-blue-600 hover:underline">Mark all</button>
+            <button onClick={() => { markAll(); setShowDropdown(false) }} className="text-xs font-bold text-amber-700 hover:text-amber-800">Mark all</button>
           </div>
 
           {notifications.length === 0 ? (
@@ -85,7 +85,7 @@ export default function NotificationBell() {
                 <div
                   key={notif.id}
                   onClick={() => { markAsRead(notif.id); setShowDropdown(false) }}
-                  className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors flex items-start gap-3 ${notif.is_read ? 'bg-white' : 'bg-yellow-50'}`}
+                  className={`flex cursor-pointer items-start gap-3 p-3 transition-colors hover:bg-slate-50 ${notif.is_read ? 'bg-white' : 'bg-amber-50'}`}
                 >
                   <div className="flex-1">
                     <h4 className="font-semibold text-sm text-gray-900">{notif.title}</h4>

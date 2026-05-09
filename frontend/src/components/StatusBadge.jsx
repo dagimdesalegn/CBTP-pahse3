@@ -1,10 +1,10 @@
 export default function StatusBadge({ status }) {
   const statusStyles = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    approved: 'bg-blue-100 text-blue-800',
-    ready: 'bg-purple-100 text-purple-800',
-    completed: 'bg-green-100 text-green-800',
-    cancelled: 'bg-red-100 text-red-800',
+    pending: 'bg-amber-100 text-amber-800 ring-amber-200',
+    approved: 'bg-sky-100 text-sky-800 ring-sky-200',
+    ready: 'bg-violet-100 text-violet-800 ring-violet-200',
+    completed: 'bg-emerald-100 text-emerald-800 ring-emerald-200',
+    cancelled: 'bg-red-100 text-red-800 ring-red-200',
   }
 
   const statusLabels = {
@@ -16,8 +16,8 @@ export default function StatusBadge({ status }) {
   }
 
   return (
-    <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusStyles[status]}`}>
-      {statusLabels[status]}
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ring-1 ${statusStyles[status] || 'bg-slate-100 text-slate-700 ring-slate-200'}`}>
+      {statusLabels[status] || status}
     </span>
   )
 }

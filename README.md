@@ -1,6 +1,6 @@
-# 🏪 Cooperative Store Management System
+# Shemachoch
 
-A comprehensive digital solution for managing consumer cooperative stores in Ethiopia. This system digitizes manual operations to improve transparency, fairness, and efficiency in goods distribution.
+A comprehensive digital solution for managing Shemachoch operations in Ethiopia. This system digitizes manual operations to improve transparency, fairness, and efficiency in goods distribution.
 
 **Location Context:** Bosa Addis Kebele, Jimma City, Ethiopia
 
@@ -233,7 +233,7 @@ The frontend will be available at `http://localhost:5173`
 ### Backend Configuration (`.env`)
 
 ```env
-APP_NAME="Cooperative Store Management"
+APP_NAME="Shemachoch"
 APP_ENV=local
 APP_KEY=base64:xxxxxxxxxxxxxxxxxxxx
 APP_DEBUG=true

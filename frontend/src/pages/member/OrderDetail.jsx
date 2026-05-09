@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import Navbar from '../../components/Navbar'
-import Sidebar from '../../components/Sidebar'
+import AppLayout from '../../components/AppLayout'
 import StatusBadge from '../../components/StatusBadge'
 import LoadingSpinner from '../../components/LoadingSpinner'
+import Toast from '../../components/Toast'
+import { Button } from '../../components/ui'
 import api from '../../services/api'
+import { formatBirr } from '../../utils/currency'
 
 const statusSteps = [
   { key: 'pending', label: 'Requested', description: 'Order received and waiting for review' },
@@ -16,7 +18,10 @@ const statusSteps = [
 export default function OrderDetail() {
   const { id } = useParams()
   const [order, setOrder] = useState(null)
+  const [payment, setPayment] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [paying, setPaying] = useState(false)
+  const [toast, setToast] = useState(null)
 
   useEffect(() => {
     fetchOrder()
@@ -26,6 +31,7 @@ export default function OrderDetail() {
     try {
       const response = await api.get(`/orders/${id}`)
       setOrder(response.data)
+      setPayment(response.data.payment || null)
     } catch (err) {
       console.error('Failed to fetch order:', err)
     } finally {
@@ -44,6 +50,37 @@ export default function OrderDetail() {
     statusSteps.findIndex(step => step.key === order?.status)
   )
 
+  const initializePayment = async () => {
+    setPaying(true)
+    try {
+      const response = await api.post('/payments/initialize', { order_id: order.id })
+      setPayment(response.data.payment)
+      if (response.data.checkout_url) {
+        window.location.href = response.data.checkout_url
+      } else {
+        setToast({ type: 'success', message: response.data.message || 'Payment initialized' })
+      }
+    } catch (err) {
+      setToast({ type: 'error', message: err.response?.data?.error || err.response?.data?.message || 'Payment could not be initialized' })
+    } finally {
+      setPaying(false)
+    }
+  }
+
+  const payWithWallet = async () => {
+    setPaying(true)
+    try {
+      const response = await api.post('/wallet/pay-order', { order_id: order.id })
+      setPayment(response.data.payment)
+      setToast({ type: 'success', message: response.data.message || 'Order paid from wallet' })
+      fetchOrder()
+    } catch (err) {
+      setToast({ type: 'error', message: err.response?.data?.message || 'Wallet payment failed' })
+    } finally {
+      setPaying(false)
+    }
+  }
+
   if (loading) return <LoadingSpinner />
   if (!order) {
     return (
@@ -57,12 +94,8 @@ export default function OrderDetail() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Navbar />
-        <main className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="max-w-4xl mx-auto space-y-6">
+    <AppLayout maxWidth="max-w-4xl">
+          <div className="space-y-6">
             <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 text-white shadow-xl">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
@@ -76,10 +109,11 @@ export default function OrderDetail() {
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <div className="mt-6 grid gap-3 sm:grid-cols-4">
                 <StatChip label="Items" value={orderItems.length} />
-                <StatChip label="Total" value={`$${Number(order.total_price).toFixed(2)}`} />
+                <StatChip label="Total" value={formatBirr(order.total_price)} />
                 <StatChip label="Status" value={capitalize(order.status)} />
+                <StatChip label="Payment" value={capitalize(payment?.status || 'unpaid')} />
               </div>
             </div>
 
@@ -145,8 +179,8 @@ export default function OrderDetail() {
                             <p className="mt-1 text-sm text-slate-600">{item.product?.category || 'General'} · {item.quantity} unit{item.quantity > 1 ? 's' : ''}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-lg font-semibold text-slate-900">${lineTotal.toFixed(2)}</p>
-                            <p className="text-sm text-slate-500">${Number(item.unit_price).toFixed(2)} each</p>
+                            <p className="text-lg font-semibold text-slate-900">{formatBirr(lineTotal)}</p>
+                            <p className="text-sm text-slate-500">{formatBirr(item.unit_price)} each</p>
                           </div>
                         </div>
                       )
@@ -156,7 +190,7 @@ export default function OrderDetail() {
 
                 <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
                   <span className="text-lg font-semibold text-slate-900">Order Total</span>
-                  <span className="text-2xl font-bold text-primary">${Number(order.total_price).toFixed(2)}</span>
+                  <span className="text-2xl font-bold text-primary">{formatBirr(order.total_price)}</span>
                 </div>
               </div>
 
@@ -171,11 +205,35 @@ export default function OrderDetail() {
                 </div>
 
                 <div className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-black/5">
-                  <h3 className="text-lg font-bold text-slate-900">Pickup Notes</h3>
+                  <h3 className="text-lg font-bold text-slate-900">Fulfillment</h3>
                   <div className="mt-4 space-y-3 text-sm text-slate-600">
-                    <p>• Wait for the status to move to <span className="font-semibold text-slate-900">Ready</span> before coming to pick it up.</p>
+                    <p><span className="font-semibold text-slate-900">Type:</span> {capitalize(order.fulfillment_type || 'pickup')}</p>
+                    {order.delivery_address && <p><span className="font-semibold text-slate-900">Address:</span> {order.delivery_address}</p>}
+                    <p>• Wait for the status to move to <span className="font-semibold text-slate-900">Ready</span> before collection or dispatch.</p>
                     <p>• You will receive the order from the store staff after confirmation.</p>
                     <p>• Keep this order number for reference: <span className="font-semibold text-slate-900">#{order.id}</span></p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-black/5">
+                  <h3 className="text-lg font-bold text-slate-900">Payment</h3>
+                  <div className="mt-4 space-y-3 text-sm text-slate-600">
+                    <p><span className="font-semibold text-slate-900">Status:</span> {capitalize(payment?.status || 'unpaid')}</p>
+                    <p><span className="font-semibold text-slate-900">Amount:</span> {formatBirr(payment?.amount || order.total_price)}</p>
+                    {payment?.checkout_url ? (
+                      <Button as="a" href={payment.checkout_url} className="w-full">Continue Payment</Button>
+                    ) : (
+                      <div className="grid gap-2">
+                        <Button onClick={initializePayment} disabled={paying || payment?.status === 'success'} className="w-full">
+                          {payment?.status === 'success' ? 'Paid' : paying ? 'Starting Payment...' : 'Pay Now'}
+                        </Button>
+                        {payment?.status !== 'success' && (
+                          <Button variant="secondary" onClick={payWithWallet} disabled={paying} className="w-full">
+                            Pay with wallet
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -187,10 +245,9 @@ export default function OrderDetail() {
                 )}
               </div>
             </div>
-          </div>
-        </main>
       </div>
-    </div>
+      {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+    </AppLayout>
   )
 }
 

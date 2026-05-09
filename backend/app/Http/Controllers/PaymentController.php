@@ -14,6 +14,12 @@ class PaymentController extends Controller
     {
         $user = $request->user();
 
+        if (!$chapa->isConfigured()) {
+            return response()->json([
+                'error' => 'Payment provider is not configured. Add CHAPA_SECRET_KEY to enable online payments.',
+            ], 503);
+        }
+
         $validated = $request->validate([
             'order_id' => 'required|integer|exists:orders,id',
         ]);
@@ -56,7 +62,7 @@ class PaymentController extends Controller
             'callback_url' => $chapa->callbackUrl(),
             'return_url' => $chapa->returnUrl($order->id),
             'customization' => [
-                'title' => 'Cooperative Store Payment',
+                'title' => 'Shemachoch Payment',
                 'description' => 'Order #' . $order->id,
             ],
         ];
