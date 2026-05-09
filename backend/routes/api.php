@@ -10,6 +10,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TelegramController;
+use App\Http\Controllers\PaymentController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -19,6 +20,9 @@ Route::get('/auth/google/callback', [AuthController::class, 'googleCallback']);
 
 // Telegram webhook
 Route::post('/telegram/webhook', [TelegramController::class, 'webhook']);
+
+// Payment callback (Chapa)
+Route::post('/payments/callback', [PaymentController::class, 'callback']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -41,6 +45,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);
     Route::post('/orders', [OrderController::class, 'store']);
+
+    // Payments
+    Route::post('/payments/initialize', [PaymentController::class, 'initialize']);
+    Route::get('/payments/verify/{tx_ref}', [PaymentController::class, 'verify']);
+    Route::get('/orders/{id}/payment', [PaymentController::class, 'orderPayment']);
 
     // Orders - Manager/Admin only
     Route::middleware('role:manager,admin')->group(function () {
