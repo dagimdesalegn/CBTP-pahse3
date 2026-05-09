@@ -61,7 +61,10 @@ export default function ProductManagement() {
       fetchProducts()
       resetForm()
     } catch (err) {
-      setToast({ type: 'error', message: 'Failed to save product' })
+      const validationErrors = err.response?.data?.errors
+        ? Object.values(err.response.data.errors).flat().join(' ')
+        : null
+      setToast({ type: 'error', message: validationErrors || err.response?.data?.message || err.response?.data?.error || 'Failed to save product' })
     }
   }
 

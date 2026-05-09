@@ -60,7 +60,7 @@ class ProductController extends Controller
 
         $product = Product::create([
             'name' => $validated['name'],
-            'description' => $validated['description'],
+            'description' => $validated['description'] ?? null,
             'price' => $validated['price'],
             'discount_price' => $validated['discount_price'] ?? null,
             'quantity' => $validated['quantity'],
