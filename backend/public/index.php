@@ -2,6 +2,16 @@
 
 define('LARAVEL_START', microtime(true));
 
+// Allow larger file uploads for verification IDs.
+ini_set('upload_max_filesize', '20M');
+ini_set('post_max_size', '20M');
+// Ensure a writable temp directory for uploads (helps avoid failed upload errors).
+$uploadTmp = __DIR__.'/../storage/app/tmp';
+if (!is_dir($uploadTmp)) {
+    @mkdir($uploadTmp, 0775, true);
+}
+ini_set('upload_tmp_dir', $uploadTmp);
+
 /*
 |--------------------------------------------------------------------------
 | Register The Auto Loader

@@ -7,15 +7,23 @@ const baseURL = apiUrl.endsWith('/api') || apiUrl === '/api' ? apiUrl : `${apiUr
 const api = axios.create({
   baseURL: baseURL,
   headers: {
-    'Content-Type': 'application/json',
+    Accept: 'application/json',
   }
 })
 
 api.interceptors.request.use(
   (config) => {
+    config.headers = config.headers || {}
     const token = localStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+
+    // Let the browser set multipart boundaries for FormData uploads
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type']
+    } else if (!config.headers['Content-Type']) {
+      config.headers['Content-Type'] = 'application/json'
     }
     return config
   },

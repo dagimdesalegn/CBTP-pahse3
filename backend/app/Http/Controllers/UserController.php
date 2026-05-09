@@ -53,6 +53,13 @@ class UserController extends Controller
             return response()->json(['error' => 'User not found'], 404);
         }
 
+        // normalize phone before validation (strip spaces and hyphens)
+        if ($request->has('phone')) {
+            $request->merge([
+                'phone' => preg_replace('/[\s-]/', '', $request->input('phone')),
+            ]);
+        }
+
         $validated = $request->validate([
             'is_verified' => 'required|boolean',
         ]);
@@ -106,7 +113,7 @@ class UserController extends Controller
                 Rule::unique('users', 'kebele_id')->ignore($user->id),
             ],
             'coupon_id' => 'required|string|max:255',
-            'kebele_id_image' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'kebele_id_image' => 'required|file|mimes:jpg,jpeg,png,webp,heic,heif,pdf|max:10240',
             'phone' => [
                 'nullable',
                 'string',
@@ -116,7 +123,17 @@ class UserController extends Controller
             ],
         ]);
 
-        $path = $request->file('kebele_id_image')->store('verification-ids', 'public');
+        $file = $request->file('kebele_id_image');
+        if (!$file || !$file->isValid()) {
+            return response()->json([
+                'message' => 'The kebele id image failed to upload.',
+                'errors' => [
+                    'kebele_id_image' => ['The kebele id image failed to upload.'],
+                ],
+            ], 422);
+        }
+
+        $path = $file->store('verification-ids', 'public');
 
         $updateData = [
             'kebele_id' => $validated['kebele_id'],

@@ -13,4 +13,12 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
+
+    'chapa' => [
+        'secret_key' => env('CHAPA_SECRET_KEY'),
+        'base_url' => env('CHAPA_BASE_URL', 'https://api.chapa.co/v1'),
+        'callback_url' => env('CHAPA_CALLBACK_URL', rtrim(env('APP_URL', 'http://localhost:8000'), '/') . '/api/payments/callback'),
+        'return_url' => env('CHAPA_RETURN_URL', rtrim(env('FRONTEND_URL', 'http://localhost:5173'), '/')),
+        'currency' => env('CHAPA_CURRENCY', 'ETB'),
+    ],
 ];

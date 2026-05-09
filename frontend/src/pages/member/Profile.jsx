@@ -14,6 +14,7 @@ export default function Profile() {
     kebele_id_image: null,
     phone: '',
   })
+  const [selectedFileName, setSelectedFileName] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState(null)
   const kebeleDisplay = user?.kebele_id?.startsWith('PENDING-') || user?.kebele_id?.startsWith('GOOGLE-')
@@ -23,7 +24,9 @@ export default function Profile() {
   const handleVerificationChange = (e) => {
     const { name, value, files } = e.target
     if (name === 'kebele_id_image') {
-      setVerificationData((prev) => ({ ...prev, kebele_id_image: files?.[0] || null }))
+      const file = files?.[0] || null
+      setVerificationData((prev) => ({ ...prev, kebele_id_image: file }))
+      setSelectedFileName(file ? `${file.name} (${Math.ceil(file.size / 1024)} KB)` : '')
       return
     }
     setVerificationData((prev) => ({ ...prev, [name]: value }))
@@ -32,20 +35,29 @@ export default function Profile() {
   const handleVerificationSubmit = async (e) => {
     e.preventDefault()
 
-    if (!verificationData.kebele_id_image) {
+    if (!verificationData.kebele_id_image || !(verificationData.kebele_id_image instanceof File)) {
       setToast({
         type: 'error',
-        message: 'Please upload a clear image of your kebele ID',
+        message: 'Please upload a kebele ID image (file not detected).',
+      })
+      return
+    }
+
+    if (verificationData.kebele_id_image.size > 10 * 1024 * 1024) {
+      setToast({
+        type: 'error',
+        message: 'Kebele ID image must be 10MB or less',
       })
       return
     }
 
     // phone validation - Ethiopian format (international +251, local 0, or bare digits)
     const phoneRaw = (verificationData.phone || '').trim()
-    if (phoneRaw) {
+    const normalizedPhone = phoneRaw.replace(/[\s-]/g, '')
+    if (normalizedPhone) {
       const ethioRegex = /^(\+251[79]\d{8}|0[79]\d{8}|[79]\d{8})$/
-      if (!ethioRegex.test(phoneRaw)) {
-        setToast({ type: 'error', message: 'Invalid phone format. Use +2519xxxxxxxx, 09xxxxxxxx, or 9xxxxxxxx (10-13 digits).' })
+      if (!ethioRegex.test(normalizedPhone)) {
+        setToast({ type: 'error', message: 'Invalid phone format. Use +2519xxxxxxxx, 09xxxxxxxx, or 9xxxxxxxx.' })
         return
       }
     }
@@ -56,12 +68,10 @@ export default function Profile() {
       const formData = new FormData()
       formData.append('kebele_id', verificationData.kebele_id.trim())
       formData.append('coupon_id', verificationData.coupon_id.trim())
-      if (verificationData.phone) formData.append('phone', verificationData.phone.trim())
+      if (normalizedPhone) formData.append('phone', normalizedPhone)
       formData.append('kebele_id_image', verificationData.kebele_id_image)
 
-      const response = await api.post('/users/verification', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      const response = await api.post('/users/verification', formData)
 
       updateUser(response.data.user)
       setToast({ type: 'success', message: 'Verification submitted. Please wait for admin approval.' })
@@ -212,11 +222,14 @@ export default function Profile() {
                         <input
                           type="file"
                           name="kebele_id_image"
-                          accept="image/*,application/pdf"
+                          accept="image/*,application/pdf,.heic,.heif,.webp"
                           onChange={handleVerificationChange}
                           required
                           className="w-full text-sm text-gray-600"
                         />
+                        {selectedFileName && (
+                          <p className="text-xs text-gray-500 mt-1">Selected: {selectedFileName}</p>
+                        )}
                       </div>
                       <button
                         type="submit"
