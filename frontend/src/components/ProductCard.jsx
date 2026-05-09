@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom'
-import { ShoppingCart } from 'lucide-react'
+import { Check, ShoppingCart } from 'lucide-react'
 import { Button, ProductImage, StockBadge } from './ui'
 import { formatBirr } from '../utils/currency'
 import { useLanguage } from '../context/LanguageContext'
 
-export default function ProductCard({ product, onAddToCart, disabledReason }) {
+export default function ProductCard({ product, onAddToCart, disabledReason, cartQuantity = 0 }) {
   const { t, productName, productDescription, categoryLabel } = useLanguage()
   const isDisabled = product.quantity === 0 || Boolean(disabledReason)
+  const isAdded = cartQuantity > 0
   const effectivePrice = Number(product.effective_price ?? product.discount_price ?? product.price)
   const hasDiscount = product.discount_price && Number(product.discount_price) < Number(product.price)
   const name = productName(product)
@@ -42,10 +43,11 @@ export default function ProductCard({ product, onAddToCart, disabledReason }) {
           onClick={() => onAddToCart(product)}
           disabled={isDisabled}
           title={disabledReason || undefined}
+          variant={isAdded ? 'secondary' : 'primary'}
           className="mt-3 w-full px-2 py-2 text-[11px] sm:mt-4 sm:px-4 sm:py-2.5 sm:text-sm"
         >
-          <ShoppingCart size={14} className="sm:h-[17px] sm:w-[17px]" />
-          {disabledReason ? t('products.verifyToBuy') : product.quantity === 0 ? t('products.unavailable') : t('products.addToCart')}
+          {isAdded ? <Check size={14} className="sm:h-[17px] sm:w-[17px]" /> : <ShoppingCart size={14} className="sm:h-[17px] sm:w-[17px]" />}
+          {disabledReason ? t('products.verifyToBuy') : product.quantity === 0 ? t('products.unavailable') : isAdded ? t('products.added') : t('products.addToCart')}
         </Button>
         {disabledReason && <p className="mt-2 text-[10px] font-semibold leading-4 text-amber-700 sm:text-xs">{t('products.verificationRequired')}</p>}
       </div>

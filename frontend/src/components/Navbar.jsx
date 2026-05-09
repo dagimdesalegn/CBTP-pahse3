@@ -45,6 +45,7 @@ export default function Navbar({ cartCount = 0, onCartClick }) {
   }
 
   const items = navItems[user?.role] || navItems.member
+  const dashboardPath = items[0]?.path || '/member/dashboard'
   const isActive = (path) => {
     if (path === '/member/dashboard') return location.pathname === path || location.pathname === '/dashboard'
     return location.pathname.startsWith(path)
@@ -54,7 +55,7 @@ export default function Navbar({ cartCount = 0, onCartClick }) {
     <header className="sticky top-0 z-40 shadow-md">
       <div className="bg-navy text-white">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-3 sm:h-16 sm:gap-3 sm:px-6 lg:px-8">
-          <Link to="/dashboard" className="flex min-w-0 items-center gap-2 rounded-lg px-2 py-2 hover:bg-white/10">
+          <Link to={dashboardPath} className="flex min-w-0 items-center gap-2 rounded-lg px-2 py-2 hover:bg-white/10">
             <span className="flex h-11 w-32 items-center justify-center sm:h-12 sm:w-36">
               <BrandLogo tone="dark" className="h-full w-full" />
             </span>
@@ -160,7 +161,7 @@ export default function Navbar({ cartCount = 0, onCartClick }) {
                   onCartClick()
                   setMenuOpen(false)
                 }}
-                className="flex items-center justify-between rounded-lg bg-amber-400 px-3 py-3 text-sm font-black text-slate-950 sm:col-span-2"
+                className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-3 text-sm font-bold text-white sm:col-span-2"
               >
                 <span className="flex items-center gap-2"><ShoppingCart size={17} /> {t('nav.cart')}</span>
                 <span>{cartCount}</span>

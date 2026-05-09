@@ -113,7 +113,7 @@ export default function Products() {
         title={t('products.title')}
         description={t('products.description')}
         actions={
-          <Button onClick={() => setShowCartModal(true)}>
+          <Button onClick={() => setShowCartModal(true)} variant="dark">
             <ShoppingCart size={17} />
             {t('nav.cart')} ({cart.length})
           </Button>
@@ -168,6 +168,7 @@ export default function Products() {
               key={product.id}
               product={product}
               onAddToCart={handleAddToCart}
+              cartQuantity={cart.find(item => item.product_id === product.id)?.quantity || 0}
               disabledReason={!user?.is_verified ? t('products.verifyBeforeBuying') : ''}
             />
           ))}
