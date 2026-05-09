@@ -38,7 +38,7 @@ export default function Login() {
       <div className="grid min-h-screen lg:grid-cols-[1.1fr_0.9fr]">
         <section className="hidden bg-slate-950 p-10 text-white lg:flex lg:flex-col lg:justify-between">
           <div className="flex items-center gap-3">
-            <span className="flex h-12 w-32 items-center justify-center rounded-lg bg-white/10 p-1.5"><BrandLogo tone="dark" className="h-full w-full" /></span>
+            <span className="flex h-14 w-40 items-center justify-center"><BrandLogo tone="dark" className="h-full w-full" /></span>
             <div>
               <p className="text-2xl font-black">Shemachoch</p>
               <p className="text-sm font-semibold text-slate-400">Professional ecommerce portal</p>
@@ -59,7 +59,7 @@ export default function Login() {
         <main className="flex items-center justify-center p-4">
           <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-xl sm:p-8">
             <div className="mb-8 text-center">
-              <div className="mx-auto flex h-16 w-40 items-center justify-center rounded-lg bg-white p-2 ring-1 ring-slate-200 lg:hidden"><BrandLogo tone="light" className="h-full w-full" /></div>
+              <div className="mx-auto flex h-20 w-52 items-center justify-center lg:hidden"><BrandLogo tone="light" className="h-full w-full" /></div>
               <h1 className="mt-4 text-3xl font-black text-slate-950">Sign in</h1>
               <p className="mt-2 text-sm text-slate-600">Access your Shemachoch workspace.</p>
             </div>

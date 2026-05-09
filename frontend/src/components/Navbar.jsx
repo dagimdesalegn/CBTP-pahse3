@@ -52,7 +52,7 @@ export default function Navbar({ cartCount = 0, onCartClick }) {
       <div className="bg-navy text-white">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-3 sm:h-16 sm:gap-3 sm:px-6 lg:px-8">
           <Link to="/dashboard" className="flex min-w-0 items-center gap-2 rounded-lg px-2 py-2 hover:bg-white/10">
-            <span className="flex h-9 w-24 items-center justify-center rounded-lg bg-white/10 p-1 sm:h-10 sm:w-28">
+            <span className="flex h-11 w-32 items-center justify-center sm:h-12 sm:w-36">
               <BrandLogo tone="dark" className="h-full w-full" />
             </span>
             <div className="hidden leading-tight sm:block">

@@ -37,7 +37,7 @@ export default function AppFooter({ cartCount = 0, onCartClick }) {
       <footer className="hidden border-t border-slate-200 bg-white px-6 py-6 text-sm text-slate-600 sm:block">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2">
-            <span className="flex h-10 w-28 items-center justify-center rounded-lg bg-white p-1 ring-1 ring-slate-200">
+            <span className="flex h-12 w-36 items-center justify-center">
               <BrandLogo tone="light" className="h-full w-full" />
             </span>
             <div>

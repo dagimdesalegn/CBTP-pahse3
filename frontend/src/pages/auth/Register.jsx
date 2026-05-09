@@ -56,7 +56,7 @@ export default function Register() {
         <main className="flex items-center justify-center p-4">
           <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-xl sm:p-8">
             <div className="mb-7 text-center">
-              <div className="mx-auto flex h-16 w-40 items-center justify-center rounded-lg bg-white p-2 ring-1 ring-slate-200"><BrandLogo tone="light" className="h-full w-full" /></div>
+              <div className="mx-auto flex h-20 w-52 items-center justify-center"><BrandLogo tone="light" className="h-full w-full" /></div>
               <h1 className="mt-4 text-3xl font-black text-slate-950">Create account</h1>
               <p className="mt-2 text-sm text-slate-600">Join Shemachoch and start your verification.</p>
             </div>
