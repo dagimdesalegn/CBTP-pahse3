@@ -10,6 +10,7 @@ import Register from './pages/auth/Register'
 import GoogleCallback from './pages/auth/GoogleCallback'
 import MemberDashboard from './pages/member/Dashboard'
 import MemberProducts from './pages/member/Products'
+import ProductDetail from './pages/member/ProductDetail'
 import MemberOrders from './pages/member/Orders'
 import OrderDetail from './pages/member/OrderDetail'
 import Profile from './pages/member/Profile'
@@ -90,6 +91,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute requiredRole="member">
             <MemberProducts />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/member/products/:id"
+        element={
+          <ProtectedRoute requiredRole="member">
+            <ProductDetail />
           </ProtectedRoute>
         }
       />

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { ShoppingCart } from 'lucide-react'
 import { Button, ProductImage, StockBadge } from './ui'
 import { formatBirr } from '../utils/currency'
@@ -9,7 +10,9 @@ export default function ProductCard({ product, onAddToCart, disabledReason }) {
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
-      <ProductImage product={product} className="h-28 sm:h-40 lg:h-44" />
+      <Link to={`/member/products/${product.id}`} className="block focus:outline-none focus:ring-2 focus:ring-amber-400" aria-label={`View ${product.name}`}>
+        <ProductImage product={product} className="h-28 sm:h-40 lg:h-44" />
+      </Link>
       <div className="flex flex-1 flex-col p-2.5 sm:p-4">
         <div className="mb-1.5 flex items-center justify-between gap-1.5 sm:mb-2">
           <span className="min-w-0 truncate text-[10px] font-bold uppercase text-slate-500 sm:text-xs">{product.category || 'General'}</span>
@@ -17,9 +20,9 @@ export default function ProductCard({ product, onAddToCart, disabledReason }) {
             <StockBadge quantity={product.quantity} />
           </span>
         </div>
-        <h3 className="line-clamp-2 min-h-[38px] text-[13px] font-black leading-tight text-slate-950 sm:min-h-[44px] sm:text-base">
+        <Link to={`/member/products/${product.id}`} className="line-clamp-2 min-h-[38px] text-[13px] font-black leading-tight text-slate-950 hover:text-amber-700 sm:min-h-[44px] sm:text-base">
           {product.name}
-        </h3>
+        </Link>
         <p className="mt-1.5 line-clamp-2 min-h-[34px] text-[11px] leading-4 text-slate-600 sm:mt-2 sm:min-h-[40px] sm:text-sm sm:leading-5">
           {product.description || 'Quality Shemachoch product.'}
         </p>
