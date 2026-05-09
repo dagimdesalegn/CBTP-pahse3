@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Edit2, PackagePlus, Plus, Trash2, X } from 'lucide-react'
+import { Edit2, ImagePlus, PackagePlus, Plus, Trash2, X } from 'lucide-react'
 import AppLayout from '../../components/AppLayout'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import Toast from '../../components/Toast'
@@ -14,7 +14,8 @@ export default function ProductManagement() {
   const [editingId, setEditingId] = useState(null)
   const [toast, setToast] = useState(null)
   const [suppliers, setSuppliers] = useState([])
-  const [formData, setFormData] = useState({ name: '', description: '', price: '', discount_price: '', quantity: '', category: '', supplier_id: '' })
+  const [formData, setFormData] = useState({ name: '', description: '', price: '', discount_price: '', quantity: '', category: '', supplier_id: '', image: null })
+  const [imagePreview, setImagePreview] = useState('')
 
   useEffect(() => {
     fetchProducts()
@@ -38,7 +39,8 @@ export default function ProductManagement() {
   const resetForm = () => {
     setShowForm(false)
     setEditingId(null)
-    setFormData({ name: '', description: '', price: '', discount_price: '', quantity: '', category: '', supplier_id: '' })
+    setFormData({ name: '', description: '', price: '', discount_price: '', quantity: '', category: '', supplier_id: '', image: null })
+    setImagePreview('')
   }
 
   const handleSubmit = async (e) => {
@@ -49,7 +51,8 @@ export default function ProductManagement() {
         if (value !== '' && value !== null && value !== undefined) payload.append(key, value)
       })
       if (editingId) {
-        await api.put(`/products/${editingId}`, payload)
+        payload.append('_method', 'PUT')
+        await api.post(`/products/${editingId}`, payload)
         setToast({ type: 'success', message: 'Product updated successfully' })
       } else {
         await api.post('/products', payload)
@@ -70,10 +73,18 @@ export default function ProductManagement() {
       discount_price: product.discount_price || '',
       quantity: product.quantity || '',
       category: product.category || '',
-      supplier_id: product.supplier_id || '',
-    })
+        supplier_id: product.supplier_id || '',
+        image: null,
+      })
+    setImagePreview(product.image_path || '')
     setEditingId(product.id)
     setShowForm(true)
+  }
+
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0] || null
+    setFormData(prev => ({ ...prev, image: file }))
+    setImagePreview(file ? URL.createObjectURL(file) : '')
   }
 
   const handleDelete = async (id) => {
@@ -154,6 +165,22 @@ export default function ProductManagement() {
                 </select>
               </label>
             </div>
+            <label>
+              <span className="ui-label">Product Image</span>
+              <div className="grid gap-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 sm:grid-cols-[160px_1fr] sm:items-center">
+                <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg bg-white">
+                  {imagePreview ? (
+                    <img src={imagePreview.startsWith('/storage') ? `${(import.meta.env.VITE_API_URL || '').replace(/\/api$/, '') || 'http://127.0.0.1:8000'}${imagePreview}` : imagePreview} alt="Product preview" className="h-full w-full object-cover" />
+                  ) : (
+                    <ImagePlus className="text-slate-400" size={34} />
+                  )}
+                </div>
+                <div>
+                  <input type="file" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp" onChange={handleImageChange} className="ui-input bg-white" />
+                  <p className="mt-2 text-xs font-semibold text-slate-500">Upload a clear product photo. JPG, PNG, GIF, or WebP up to 2MB.</p>
+                </div>
+              </div>
+            </label>
             <label>
               <span className="ui-label">Description</span>
               <textarea

@@ -50,12 +50,12 @@ class ProductController extends Controller
             'quantity' => 'required|integer|min:0',
             'category' => 'required|string',
             'supplier_id' => 'nullable|integer|exists:suppliers,id',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
         ]);
 
         $imagePath = null;
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('products', 'public');
+            $imagePath = '/storage/' . $request->file('image')->store('products', 'public');
         }
 
         $product = Product::create([
@@ -92,14 +92,15 @@ class ProductController extends Controller
             'quantity' => 'sometimes|integer|min:0',
             'category' => 'sometimes|string',
             'supplier_id' => 'nullable|integer|exists:suppliers,id',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
             'is_active' => 'sometimes|boolean',
         ]);
 
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('products', 'public');
+            $imagePath = '/storage/' . $request->file('image')->store('products', 'public');
             $validated['image_path'] = $imagePath;
         }
+        unset($validated['image']);
 
         $product->update($validated);
 

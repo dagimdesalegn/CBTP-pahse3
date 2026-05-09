@@ -42,11 +42,11 @@ export default function Notifications() {
         <form onSubmit={handleSend} className="space-y-5">
           <label>
             <span className="ui-label">Notification Title</span>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="New Products Available" className="ui-input" />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Fresh teff and oil stock available" className="ui-input" />
           </label>
           <label>
             <span className="ui-label">Message</span>
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Write your message here..." rows="6" className="ui-input" />
+            <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Dear members, new stock is ready for pickup at the cooperative store." rows="6" className="ui-input" />
           </label>
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? <Bell size={17} /> : <Send size={17} />}

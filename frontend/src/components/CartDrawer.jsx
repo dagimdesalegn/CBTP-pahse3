@@ -82,7 +82,7 @@ export default function CartDrawer({ open, cart, cartTotal, onClose, onRemove, o
                 {fulfillmentType === 'delivery' && (
                   <label>
                     <span className="ui-label">Delivery Address</span>
-                    <input value={deliveryAddress} onChange={(e) => onDeliveryAddressChange?.(e.target.value)} placeholder="Enter delivery location" className="ui-input" />
+                    <input value={deliveryAddress} onChange={(e) => onDeliveryAddressChange?.(e.target.value)} placeholder="Bole Sub City, Woreda 03, near Medhanialem" className="ui-input" />
                   </label>
                 )}
               </div>

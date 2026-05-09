@@ -68,7 +68,7 @@ export default function Login() {
                 <span className="ui-label">Email Address</span>
                 <span className="relative block">
                   <Mail className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="john@example.com" required className="ui-input pl-10" />
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="amanuel@example.com" required className="ui-input pl-10" />
                 </span>
               </label>
               <label>
@@ -97,12 +97,6 @@ export default function Login() {
             <p className="mt-6 text-center text-sm text-slate-600">
               Do not have an account? <Link to="/register" className="font-black text-amber-700">Create one</Link>
             </p>
-
-            <div className="mt-6 rounded-lg bg-slate-50 p-4 text-xs text-slate-600">
-              <p className="font-black uppercase tracking-wide text-slate-800">Demo Accounts</p>
-              <p className="mt-2"><span className="font-mono">admin@gmail.com</span> / <span className="font-mono">admin@123456</span></p>
-              <p className="mt-1"><span className="font-mono">manager@gmail.com</span> / <span className="font-mono">manager@123456</span></p>
-            </div>
           </div>
         </main>
       </div>
