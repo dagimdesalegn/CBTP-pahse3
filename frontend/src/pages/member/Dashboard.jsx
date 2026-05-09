@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Sidebar from '../../components/Sidebar'
 import LoadingSpinner from '../../components/LoadingSpinner'
@@ -65,16 +66,26 @@ export default function MemberDashboard() {
         <Navbar />
         <main className="flex-1 overflow-auto p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">Welcome, {user?.name}!</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">Welcome, {user?.name}!</h1>
 
             {!user?.is_verified && (
-              <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-lg mb-8">
-                <p>⚠️ Your account is pending verification. You cannot place orders yet.</p>
-                <p className="text-sm mt-1">
-                  {user?.verification_submitted_at
-                    ? 'Verification submitted. Please wait for approval.'
-                    : 'Submit your kebele ID, coupon ID, and ID image from your profile.'}
-                </p>
+              <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-lg mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-semibold">⚠️ Your account is pending verification.</p>
+                  <p className="text-sm">
+                    {user?.verification_submitted_at
+                      ? 'Verification submitted. Please wait for approval.'
+                      : 'Submit your kebele ID, coupon ID, and ID image to get verified.'}
+                  </p>
+                </div>
+                {!user?.verification_submitted_at && (
+                  <Link
+                    to="/profile"
+                    className="inline-flex items-center justify-center bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
+                  >
+                    Submit Verification
+                  </Link>
+                )}
               </div>
             )}
 
@@ -86,7 +97,7 @@ export default function MemberDashboard() {
               <StatCard title="Unread Notifications" value={stats?.unreadNotifications || 0} color="red" />
             </div>
 
-            <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
               <ActionCard
                 title="Browse Products"
                 description="View available products and place orders"

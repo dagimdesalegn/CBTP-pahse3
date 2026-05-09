@@ -13,6 +13,12 @@ export default function UserManagement() {
   const [toast, setToast] = useState(null)
   const [selectedUser, setSelectedUser] = useState(null)
 
+  const apiBase = import.meta.env.VITE_API_URL || ''
+  const publicBase = apiBase.endsWith('/api') ? apiBase.slice(0, -4) : apiBase
+  const selectedImageUrl = selectedUser?.kebele_id_image_path
+    ? `${publicBase}/storage/${selectedUser.kebele_id_image_path}`
+    : null
+
   useEffect(() => {
     fetchUsers()
   }, [search])
@@ -54,7 +60,7 @@ export default function UserManagement() {
         <Navbar />
         <main className="flex-1 overflow-auto p-4 md:p-8">
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">User Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">User Management</h1>
 
             <div className="mb-6">
               <input
@@ -67,12 +73,12 @@ export default function UserManagement() {
             </div>
 
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <table className="w-full">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px]">
                 <thead className="bg-primary text-white">
                   <tr>
                     <th className="px-4 py-3 text-left">Name</th>
                     <th className="px-4 py-3 text-left">Email</th>
-                    <th className="px-4 py-3 text-left">Kebele ID</th>
                     <th className="px-4 py-3 text-left">Role</th>
                     <th className="px-4 py-3 text-center">Verified</th>
                     <th className="px-4 py-3 text-center">Action</th>
@@ -83,7 +89,6 @@ export default function UserManagement() {
                     <tr key={user.id} className="border-b hover:bg-gray-50">
                       <td className="px-4 py-3 font-semibold">{user.name}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">{user.email}</td>
-                      <td className="px-4 py-3">{user.kebele_id}</td>
                       <td className="px-4 py-3 capitalize">{user.role}</td>
                       <td className="px-4 py-3 text-center">
                         {user.is_verified ? (
@@ -117,7 +122,8 @@ export default function UserManagement() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
+              </div>
             </div>
           </div>
         </main>
@@ -130,11 +136,11 @@ export default function UserManagement() {
             className="absolute inset-0 bg-black bg-opacity-40"
             onClick={() => setSelectedUser(null)}
           ></div>
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 flex justify-between items-start">
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6 flex justify-between items-start">
               <div>
-                <h2 className="text-2xl font-bold">New Registration Details</h2>
-                <p className="text-blue-100 text-sm">Review member information</p>
+                <h2 className="text-xl font-bold">Member Details</h2>
+                <p className="text-blue-100 text-sm">Review verification and account information</p>
               </div>
               <button
                 onClick={() => setSelectedUser(null)}
@@ -144,33 +150,82 @@ export default function UserManagement() {
               </button>
             </div>
             <div className="p-6 space-y-4">
-              <div className="p-4 bg-gray-50 rounded-xl">
-                <p className="text-xs uppercase tracking-wider text-gray-500">Full Name</p>
-                <p className="text-lg font-semibold text-gray-900">{selectedUser.name}</p>
-              </div>
-              <div className="p-4 bg-blue-50 rounded-xl">
-                <p className="text-xs uppercase tracking-wider text-blue-600">Email Address</p>
-                <p className="text-lg font-semibold text-blue-900">{selectedUser.email}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs uppercase tracking-wider text-gray-500">Kebele ID</p>
-                  <p className="text-sm font-semibold text-gray-900">{selectedUser.kebele_id}</p>
+                  <p className="text-xs uppercase tracking-wider text-gray-500">Full Name</p>
+                  <p className="text-base font-semibold text-gray-900">{selectedUser.name}</p>
+                </div>
+                <div className="p-4 bg-blue-50 rounded-xl">
+                  <p className="text-xs uppercase tracking-wider text-blue-600">Email Address</p>
+                  <p className="text-base font-semibold text-blue-900">{selectedUser.email}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs uppercase tracking-wider text-gray-500">Phone</p>
+                  <p className="text-sm font-semibold text-gray-900">{selectedUser.phone || 'Not provided'}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs uppercase tracking-wider text-gray-500">Role</p>
                   <p className="text-sm font-semibold text-gray-900 capitalize">{selectedUser.role}</p>
                 </div>
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs uppercase tracking-wider text-gray-500">Kebele ID</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {selectedUser.kebele_id?.startsWith('PENDING-') || selectedUser.kebele_id?.startsWith('GOOGLE-')
+                      ? 'Not provided'
+                      : selectedUser.kebele_id}
+                  </p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs uppercase tracking-wider text-gray-500">Coupon ID</p>
+                  <p className="text-sm font-semibold text-gray-900">{selectedUser.coupon_id || 'Not provided'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs uppercase tracking-wider text-gray-500">Verification Status</p>
+                  <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold ${
+                    selectedUser.is_verified
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {selectedUser.is_verified ? 'Verified' : 'Pending'}
+                  </span>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs uppercase tracking-wider text-gray-500">Submitted At</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {selectedUser.verification_submitted_at
+                      ? new Date(selectedUser.verification_submitted_at).toLocaleString()
+                      : 'Not submitted'}
+                  </p>
+                </div>
+              </div>
+
               <div className="p-4 bg-gray-50 rounded-xl">
-                <p className="text-xs uppercase tracking-wider text-gray-500">Verification Status</p>
-                <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold ${
-                  selectedUser.is_verified
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-yellow-100 text-yellow-700'
-                }`}>
-                  {selectedUser.is_verified ? 'Verified' : 'Pending'}
-                </span>
+                <p className="text-xs uppercase tracking-wider text-gray-500">Kebele ID Image</p>
+                {selectedImageUrl ? (
+                  <div className="mt-3 space-y-2">
+                    <img
+                      src={selectedImageUrl}
+                      alt="Kebele ID"
+                      className="w-full max-h-64 object-contain rounded-lg border border-gray-200"
+                    />
+                    <a
+                      href={selectedImageUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                    >
+                      Open full image
+                    </a>
+                  </div>
+                ) : (
+                  <p className="text-sm font-semibold text-gray-900">Not uploaded</p>
+                )}
               </div>
             </div>
           </div>

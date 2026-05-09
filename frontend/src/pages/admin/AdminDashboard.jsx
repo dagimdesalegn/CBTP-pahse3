@@ -45,9 +45,9 @@ export default function AdminDashboard() {
         <Navbar />
         <main className="flex-1 overflow-auto p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">Admin Dashboard</h1>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 mb-6">
               <StatCard title="Total Orders" value={stats?.totalOrders} color="blue" />
               <StatCard title="Total Revenue" value={`$${(stats?.totalRevenue || 0).toFixed(2)}`} color="green" />
               <StatCard title="Total Products" value={stats?.totalProducts} color="purple" />
