@@ -29,6 +29,6 @@ class ProductPolicy
 
     public function delete(User $user): bool
     {
-        return $user->hasAccess('products');
+        return $user->role === 'manager' || $user->hasAccess('products');
     }
 }

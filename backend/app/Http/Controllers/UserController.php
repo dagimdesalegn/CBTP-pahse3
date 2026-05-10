@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Services\NotificationService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -52,6 +53,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'access_level' => 'nullable|in:super_admin,operations_admin,report_admin,support_admin',
             'membership_status' => 'nullable|in:active,suspended,inactive',
+            'manager_kebele' => 'nullable|string|max:255',
         ]);
 
         $user = User::findOrFail($id);
@@ -127,6 +129,10 @@ class UserController extends Controller
         }
 
         $validated = $request->validate([
+            'verification_region' => 'required|string|max:255',
+            'verification_city' => 'required|string|max:255',
+            'verification_woreda_subcity' => 'required|string|max:255',
+            'verification_kebele' => 'required|string|max:255',
             'kebele_id' => [
                 'required',
                 'string',
@@ -157,6 +163,10 @@ class UserController extends Controller
         $path = $file->store('verification-ids', 'public');
 
         $updateData = [
+            'verification_region' => $validated['verification_region'],
+            'verification_city' => $validated['verification_city'],
+            'verification_woreda_subcity' => $validated['verification_woreda_subcity'],
+            'verification_kebele' => $validated['verification_kebele'],
             'kebele_id' => $validated['kebele_id'],
             'coupon_id' => $validated['coupon_id'],
             'kebele_id_image_path' => $path,
@@ -181,7 +191,7 @@ class UserController extends Controller
             try {
                 NotificationService::notifyNewUserRegistration($user);
             } catch (\Exception $e) {
-                \Log::error('Notification send failed: ' . $e->getMessage());
+                Log::error('Notification send failed: ' . $e->getMessage());
             }
         });
 

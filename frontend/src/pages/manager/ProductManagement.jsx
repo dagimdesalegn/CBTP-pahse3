@@ -7,6 +7,7 @@ import { Button, DataTable, EmptyState, PageHeader, SectionCard, StockBadge } fr
 import { formatBirr } from '../../utils/currency'
 import api from '../../services/api'
 import { useLanguage } from '../../context/LanguageContext'
+import { useAuth } from '../../hooks/useAuth'
 
 export default function ProductManagement() {
   const [products, setProducts] = useState([])
@@ -15,9 +16,11 @@ export default function ProductManagement() {
   const [editingId, setEditingId] = useState(null)
   const [toast, setToast] = useState(null)
   const [suppliers, setSuppliers] = useState([])
-  const [formData, setFormData] = useState({ name: '', name_am: '', name_or: '', description: '', description_am: '', description_or: '', price: '', discount_price: '', quantity: '', category: '', supplier_id: '', image: null })
+  const [formData, setFormData] = useState({ name: '', name_am: '', name_or: '', description: '', description_am: '', description_or: '', price: '', discount_price: '', quantity: '', category: '', kebele: '', supplier_id: '', image: null })
   const [imagePreview, setImagePreview] = useState('')
   const { t, productName, productDescription, categoryLabel } = useLanguage()
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
     fetchProducts()
@@ -41,7 +44,7 @@ export default function ProductManagement() {
   const resetForm = () => {
     setShowForm(false)
     setEditingId(null)
-    setFormData({ name: '', name_am: '', name_or: '', description: '', description_am: '', description_or: '', price: '', discount_price: '', quantity: '', category: '', supplier_id: '', image: null })
+    setFormData({ name: '', name_am: '', name_or: '', description: '', description_am: '', description_or: '', price: '', discount_price: '', quantity: '', category: '', kebele: '', supplier_id: '', image: null })
     setImagePreview('')
   }
 
@@ -82,9 +85,10 @@ export default function ProductManagement() {
       discount_price: product.discount_price || '',
       quantity: product.quantity || '',
       category: product.category || '',
-        supplier_id: product.supplier_id || '',
-        image: null,
-      })
+      kebele: product.kebele || '',
+      supplier_id: product.supplier_id || '',
+      image: null,
+    })
     setImagePreview(product.image_path || '')
     setEditingId(product.id)
     setShowForm(true)
@@ -113,6 +117,7 @@ export default function ProductManagement() {
   const columns = [
     { key: 'name', header: t('common.product'), render: p => <div><p className="font-bold text-slate-950">{productName(p)}</p><p className="line-clamp-1 text-xs text-slate-500">{productDescription(p)}</p></div> },
     { key: 'category', header: 'Category', render: p => <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">{categoryLabel(p.category)}</span> },
+    { key: 'kebele', header: 'Kebele', render: p => <span className="font-semibold text-slate-700">{p.kebele || 'Not assigned'}</span> },
     { key: 'supplier', header: t('manager.supplier'), render: p => p.supplier?.company_name || '-' },
     { key: 'price', header: 'Price', cellClassName: 'text-right font-bold text-slate-950', render: p => <div>{formatBirr(p.effective_price ?? p.price)}{p.discount_price && <p className="text-xs text-slate-400 line-through">{formatBirr(p.price)}</p>}</div> },
     { key: 'quantity', header: 'Stock', render: p => <div className="flex items-center gap-2"><span className="font-bold">{p.quantity}</span><StockBadge quantity={p.quantity} /></div> },
@@ -142,6 +147,12 @@ export default function ProductManagement() {
           </Button>
         }
       />
+
+      <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">
+        {isAdmin
+          ? 'Admin view: products can be managed across Kebeles.'
+          : `Assigned Kebele: ${user?.manager_kebele || 'Not assigned. Ask an admin to assign your Kebele before adding products.'}`}
+      </div>
 
       {showForm && (
         <SectionCard
@@ -173,6 +184,18 @@ export default function ProductManagement() {
                   {suppliers.map(supplier => <option key={supplier.id} value={supplier.id}>{supplier.company_name}</option>)}
                 </select>
               </label>
+              {isAdmin && (
+                <label>
+                  <span className="ui-label">Kebele</span>
+                  <input
+                    name="kebele"
+                    value={formData.kebele}
+                    onChange={(e) => setFormData(prev => ({ ...prev, kebele: e.target.value }))}
+                    placeholder="Bosa Addis Kebele"
+                    className="ui-input"
+                  />
+                </label>
+              )}
             </div>
             <label>
               <span className="ui-label">{t('manager.productImage')}</span>

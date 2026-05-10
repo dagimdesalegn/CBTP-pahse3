@@ -20,6 +20,7 @@ class Product extends Model
         'discount_price',
         'quantity',
         'category',
+        'kebele',
         'supplier_id',
         'image_path',
         'is_active',

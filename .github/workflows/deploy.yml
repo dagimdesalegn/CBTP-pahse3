@@ -74,7 +74,9 @@ jobs:
 
             # Set permissions
             mkdir -p resources/views
+            php artisan storage:link || true
             sudo chown -R www-data:www-data storage bootstrap/cache database
+            sudo chown -h www-data:www-data public/storage || true
             sudo chmod -R ug+rwX storage bootstrap/cache database
 
             # Run migrations

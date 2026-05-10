@@ -14,12 +14,16 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $user = auth()->user();
+        $user = $request->user();
         $query = Order::query();
 
         // Members can only see their own orders
         if ($user->role === 'member') {
             $query->where('user_id', $user->id);
+        } elseif ($user->role === 'manager') {
+            $query->whereHas('orderItems.product', function ($productQuery) use ($user) {
+                $productQuery->where('kebele', $user->manager_kebele ?: '__missing_manager_kebele__');
+            });
         }
 
         if ($request->has('status')) {
@@ -43,7 +47,7 @@ class OrderController extends Controller
         return response()->json($orders);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $order = Order::with('user', 'orderItems.product', 'payment')->find($id);
 
@@ -51,8 +55,13 @@ class OrderController extends Controller
             return response()->json(['error' => 'Order not found'], 404);
         }
 
+        $user = $request->user();
         // Members can only see their own orders
-        if (auth()->user()->role === 'member' && $order->user_id !== auth()->id()) {
+        if ($user->role === 'member' && $order->user_id !== $user->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if ($user->role === 'manager' && !$this->orderIsInManagerScope($order, $user)) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -61,7 +70,7 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
-        $user = auth()->user();
+        $user = $request->user();
 
         // Only verified members can place orders
         if ($user->role === 'member' && !$user->is_verified) {
@@ -90,6 +99,12 @@ class OrderController extends Controller
                 return response()->json([
                     'error' => 'Product not found or is inactive',
                 ], 404);
+            }
+
+            if ($user->role === 'member' && $product->kebele !== $user->verification_kebele) {
+                return response()->json([
+                    'error' => 'Product is not available in your Kebele: ' . $product->name,
+                ], 403);
             }
 
             if ($product->quantity < $item['quantity']) {
@@ -154,6 +169,9 @@ class OrderController extends Controller
         if (!$order) {
             return response()->json(['error' => 'Order not found'], 404);
         }
+        if ($request->user()->role === 'manager' && !$this->orderIsInManagerScope($order, $request->user())) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
 
         $oldStatus = $order->status;
         $order->update(['status' => $validated['status']]);
@@ -165,5 +183,18 @@ class OrderController extends Controller
             'message' => 'Order status updated successfully',
             'order' => $order,
         ]);
+    }
+
+    private function orderIsInManagerScope(Order $order, $manager): bool
+    {
+        if (!$manager->manager_kebele) {
+            return false;
+        }
+
+        return $order->orderItems()
+            ->whereHas('product', function ($query) use ($manager) {
+                $query->where('kebele', $manager->manager_kebele);
+            })
+            ->exists();
     }
 }

@@ -19,7 +19,22 @@ class TelegramController extends Controller
 
             // Handle Telegram bot commands
             if ($text === '/start') {
-                $this->sendTelegramMessage($chatId, 'Welcome to Shemachoch! Please use the web app to continue.');
+                $this->sendTelegramMessage(
+                    $chatId,
+                    'Welcome to Shemachoch! Please use the web app to continue.',
+                    [
+                        'inline_keyboard' => [
+                            [
+                                [
+                                    'text' => 'Open Shemachoch',
+                                    'web_app' => [
+                                        'url' => config('services.telegram.mini_app_url'),
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ]
+                );
             }
         }
 
@@ -51,13 +66,19 @@ class TelegramController extends Controller
         ]);
     }
 
-    protected function sendTelegramMessage($chatId, $message)
+    protected function sendTelegramMessage($chatId, $message, ?array $replyMarkup = null)
     {
         $botToken = config('services.telegram.bot_token');
 
-        Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+        $payload = [
             'chat_id' => $chatId,
             'text' => $message,
-        ]);
+        ];
+
+        if ($replyMarkup) {
+            $payload['reply_markup'] = $replyMarkup;
+        }
+
+        Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", $payload);
     }
 }

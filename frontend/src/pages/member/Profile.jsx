@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import AppLayout from '../../components/AppLayout'
 import { useAuth } from '../../hooks/useAuth'
 import { CreditCard, Shield, Mail, Phone } from 'lucide-react'
@@ -6,10 +6,15 @@ import api from '../../services/api'
 import Toast from '../../components/Toast'
 import { SectionCard, StatCard } from '../../components/ui'
 import { formatBirr } from '../../utils/currency'
+import { getCitySuggestions, getKebeleSuggestions, getRegionSuggestions, getWoredaSuggestions } from '../../data/ethiopiaLocations'
 
 export default function Profile() {
   const { user, updateUser } = useAuth()
   const [verificationData, setVerificationData] = useState({
+    verification_region: '',
+    verification_city: '',
+    verification_woreda_subcity: '',
+    verification_kebele: '',
     kebele_id: '',
     coupon_id: '',
     kebele_id_image: null,
@@ -22,6 +27,29 @@ export default function Profile() {
   const kebeleDisplay = user?.kebele_id?.startsWith('PENDING-') || user?.kebele_id?.startsWith('GOOGLE-')
     ? 'Not provided'
     : user?.kebele_id
+  const regionSuggestions = useMemo(() => getRegionSuggestions(verificationData.verification_region), [verificationData.verification_region])
+  const citySuggestions = useMemo(
+    () => getCitySuggestions(verificationData.verification_region, verificationData.verification_city),
+    [verificationData.verification_region, verificationData.verification_city]
+  )
+  const woredaSuggestions = useMemo(
+    () => getWoredaSuggestions(verificationData.verification_region, verificationData.verification_city, verificationData.verification_woreda_subcity),
+    [verificationData.verification_region, verificationData.verification_city, verificationData.verification_woreda_subcity]
+  )
+  const kebeleSuggestions = useMemo(
+    () => getKebeleSuggestions(
+      verificationData.verification_region,
+      verificationData.verification_city,
+      verificationData.verification_woreda_subcity,
+      verificationData.verification_kebele
+    ),
+    [
+      verificationData.verification_region,
+      verificationData.verification_city,
+      verificationData.verification_woreda_subcity,
+      verificationData.verification_kebele,
+    ]
+  )
 
   useEffect(() => {
     api.get('/wallet').then(res => setWallet(res.data)).catch(() => {})
@@ -72,6 +100,10 @@ export default function Profile() {
 
     try {
       const formData = new FormData()
+      formData.append('verification_region', verificationData.verification_region.trim())
+      formData.append('verification_city', verificationData.verification_city.trim())
+      formData.append('verification_woreda_subcity', verificationData.verification_woreda_subcity.trim())
+      formData.append('verification_kebele', verificationData.verification_kebele.trim())
       formData.append('kebele_id', verificationData.kebele_id.trim())
       formData.append('coupon_id', verificationData.coupon_id.trim())
       if (normalizedPhone) formData.append('phone', normalizedPhone)
@@ -81,7 +113,16 @@ export default function Profile() {
 
       updateUser(response.data.user)
       setToast({ type: 'success', message: 'Verification submitted. Please wait for admin approval.' })
-      setVerificationData({ kebele_id: '', coupon_id: '', kebele_id_image: null, phone: '' })
+      setVerificationData({
+        verification_region: '',
+        verification_city: '',
+        verification_woreda_subcity: '',
+        verification_kebele: '',
+        kebele_id: '',
+        coupon_id: '',
+        kebele_id_image: null,
+        phone: '',
+      })
     } catch (error) {
       const validationErrors = error.response?.data?.errors
         ? Object.values(error.response.data.errors).flat().join(' ')
@@ -207,6 +248,72 @@ export default function Profile() {
                   {!user?.verification_submitted_at && (
                     <form onSubmit={handleVerificationSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-4">
                       <h2 className="text-lg font-bold text-gray-900">Verification Request</h2>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Region</label>
+                          <input
+                            type="text"
+                            name="verification_region"
+                            value={verificationData.verification_region}
+                            onChange={handleVerificationChange}
+                            placeholder="Start typing region"
+                            list="verification-region-options"
+                            required
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <datalist id="verification-region-options">
+                            {regionSuggestions.map(region => <option key={region} value={region} />)}
+                          </datalist>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">City</label>
+                          <input
+                            type="text"
+                            name="verification_city"
+                            value={verificationData.verification_city}
+                            onChange={handleVerificationChange}
+                            placeholder="Start typing city"
+                            list="verification-city-options"
+                            required
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <datalist id="verification-city-options">
+                            {citySuggestions.map(city => <option key={city} value={city} />)}
+                          </datalist>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Woreda/Sub-city</label>
+                          <input
+                            type="text"
+                            name="verification_woreda_subcity"
+                            value={verificationData.verification_woreda_subcity}
+                            onChange={handleVerificationChange}
+                            placeholder="Start typing woreda or sub-city"
+                            list="verification-woreda-options"
+                            required
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <datalist id="verification-woreda-options">
+                            {woredaSuggestions.map(woreda => <option key={woreda} value={woreda} />)}
+                          </datalist>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Kebele</label>
+                          <input
+                            type="text"
+                            name="verification_kebele"
+                            value={verificationData.verification_kebele}
+                            onChange={handleVerificationChange}
+                            placeholder="Start typing kebele"
+                            list="verification-kebele-options"
+                            required
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <datalist id="verification-kebele-options">
+                            {kebeleSuggestions.map(kebele => <option key={kebele} value={kebele} />)}
+                          </datalist>
+                        </div>
+                      </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">Kebele ID</label>
                         <input

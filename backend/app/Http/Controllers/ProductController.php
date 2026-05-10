@@ -9,7 +9,9 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
+        $user = $request->user();
         $query = Product::with('supplier')->where('is_active', true);
+        $this->applyProductScope($query, $user, $request);
 
         if ($request->has('category')) {
             $query->where('category', $request->category);
@@ -31,13 +33,15 @@ class ProductController extends Controller
         return response()->json($products);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $product = Product::find($id);
 
         if (!$product) {
             return response()->json(['error' => 'Product not found'], 404);
         }
+
+        $this->ensureProductInUserScope($product, $request->user());
 
         return response()->json($product);
     }
@@ -57,6 +61,7 @@ class ProductController extends Controller
             'discount_price' => 'nullable|numeric|min:0|lt:price',
             'quantity' => 'required|integer|min:0',
             'category' => 'required|string',
+            'kebele' => 'nullable|string|max:255',
             'supplier_id' => 'nullable|integer|exists:suppliers,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
         ]);
@@ -77,6 +82,7 @@ class ProductController extends Controller
             'discount_price' => $validated['discount_price'] ?? null,
             'quantity' => $validated['quantity'],
             'category' => $validated['category'],
+            'kebele' => $this->productKebeleForCreate($request),
             'supplier_id' => $validated['supplier_id'] ?? null,
             'image_path' => $imagePath,
         ]);
@@ -95,6 +101,7 @@ class ProductController extends Controller
         if (!$product) {
             return response()->json(['error' => 'Product not found'], 404);
         }
+        $this->ensureProductInUserScope($product, $request->user());
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
@@ -107,6 +114,7 @@ class ProductController extends Controller
             'discount_price' => 'nullable|numeric|min:0',
             'quantity' => 'sometimes|integer|min:0',
             'category' => 'sometimes|string',
+            'kebele' => 'nullable|string|max:255',
             'supplier_id' => 'nullable|integer|exists:suppliers,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
             'is_active' => 'sometimes|boolean',
@@ -117,6 +125,9 @@ class ProductController extends Controller
             $validated['image_path'] = $imagePath;
         }
         unset($validated['image']);
+        if ($request->user()->role === 'manager') {
+            unset($validated['kebele']);
+        }
 
         $product->update($validated);
 
@@ -126,7 +137,7 @@ class ProductController extends Controller
         ]);
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $this->authorize('delete', Product::class);
 
@@ -134,11 +145,67 @@ class ProductController extends Controller
         if (!$product) {
             return response()->json(['error' => 'Product not found'], 404);
         }
+        $this->ensureProductInUserScope($product, $request->user());
 
         $product->delete();
 
         return response()->json([
             'message' => 'Product deleted successfully',
         ]);
+    }
+
+    private function applyProductScope($query, $user, Request $request): void
+    {
+        if (!$user) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        if ($user->role === 'member') {
+            $query->where('kebele', $user->verification_kebele ?: '__missing_member_kebele__');
+            return;
+        }
+
+        if ($user->role === 'manager') {
+            $query->where('kebele', $user->manager_kebele ?: '__missing_manager_kebele__');
+            return;
+        }
+
+        if ($user->role === 'admin' && $request->filled('kebele')) {
+            $query->where('kebele', $request->input('kebele'));
+        }
+    }
+
+    private function productKebeleForCreate(Request $request): ?string
+    {
+        $user = $request->user();
+        if ($user->role === 'manager') {
+            abort_if(!$user->manager_kebele, 422, 'Manager must be assigned to a Kebele before creating products.');
+            return $user->manager_kebele;
+        }
+
+        return $request->input('kebele') ?: 'Bosa Addis Kebele';
+    }
+
+    private function productIsInUserScope(Product $product, $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->role === 'member') {
+            return $product->kebele === $user->verification_kebele;
+        }
+
+        if ($user->role === 'manager') {
+            return $product->kebele === $user->manager_kebele;
+        }
+
+        return true;
+    }
+
+    private function ensureProductInUserScope(Product $product, $user): void
+    {
+        abort_unless($this->productIsInUserScope($product, $user), 404, 'Product not found');
     }
 }

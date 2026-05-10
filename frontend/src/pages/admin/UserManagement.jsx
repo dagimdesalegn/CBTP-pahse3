@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Check, CreditCard, Eye, KeyRound, Search, ShieldCheck, X } from 'lucide-react'
 import AppLayout from '../../components/AppLayout'
 import LoadingSpinner from '../../components/LoadingSpinner'
@@ -6,6 +6,7 @@ import Toast from '../../components/Toast'
 import { Button, DataTable, EmptyState, PageHeader } from '../../components/ui'
 import { formatBirr } from '../../utils/currency'
 import api from '../../services/api'
+import { getKebeleSuggestions } from '../../data/ethiopiaLocations'
 
 export default function UserManagement() {
   const [users, setUsers] = useState([])
@@ -16,10 +17,16 @@ export default function UserManagement() {
   const [walletAmount, setWalletAmount] = useState('')
   const [walletDescription, setWalletDescription] = useState('')
   const [accessLevel, setAccessLevel] = useState('')
+  const [managerKebele, setManagerKebele] = useState('')
 
   const apiBase = import.meta.env.VITE_API_URL || ''
   const publicBase = apiBase.endsWith('/api') ? apiBase.slice(0, -4) : apiBase
   const selectedImageUrl = selectedUser?.kebele_id_image_path ? `${publicBase}/storage/${selectedUser.kebele_id_image_path}` : null
+  const managerKebeleSuggestions = useMemo(() => {
+    const kebeles = getKebeleSuggestions('', '', '', managerKebele)
+    const values = ['Bosa Addis Kebele', ...kebeles, ...kebeles.map(kebele => `${kebele} Kebele`)]
+    return [...new Set(values)].filter(kebele => kebele.toLowerCase().includes(managerKebele.toLowerCase()))
+  }, [managerKebele])
 
   useEffect(() => {
     fetchUsers()
@@ -52,6 +59,7 @@ export default function UserManagement() {
   const openDetails = (user) => {
     setSelectedUser(user)
     setAccessLevel(user.access_level || 'super_admin')
+    setManagerKebele(user.manager_kebele || '')
     setWalletAmount('')
     setWalletDescription('')
   }
@@ -61,6 +69,7 @@ export default function UserManagement() {
       await api.put(`/users/${selectedUser.id}/access`, {
         access_level: selectedUser.role === 'admin' ? accessLevel : selectedUser.access_level,
         membership_status: selectedUser.membership_status || 'active',
+        manager_kebele: selectedUser.role === 'manager' ? managerKebele.trim() : selectedUser.manager_kebele,
       })
       setToast({ type: 'success', message: 'Access updated' })
       fetchUsers()
@@ -106,6 +115,7 @@ export default function UserManagement() {
       ),
     },
     { key: 'role', header: 'Role', render: user => <span className="capitalize">{user.role}</span> },
+    { key: 'manager_kebele', header: 'Manager Kebele', render: user => user.role === 'manager' ? (user.manager_kebele || 'Not assigned') : '-' },
     {
       key: 'verified',
       header: 'Verified',
@@ -174,6 +184,11 @@ export default function UserManagement() {
                 <Info label="Access Level" value={selectedUser.access_level || (selectedUser.role === 'admin' ? 'super_admin' : 'Standard')} />
                 <Info label="Wallet Balance" value={formatBirr(selectedUser.account_balance || 0)} />
                 <Info label="Membership" value={selectedUser.membership_status || 'active'} />
+                <Info label="Manager Kebele" value={selectedUser.manager_kebele || 'Not assigned'} />
+                <Info label="Region" value={selectedUser.verification_region || 'Not provided'} />
+                <Info label="City" value={selectedUser.verification_city || 'Not provided'} />
+                <Info label="Woreda/Sub-city" value={selectedUser.verification_woreda_subcity || 'Not provided'} />
+                <Info label="Kebele" value={selectedUser.verification_kebele || 'Not provided'} />
                 <Info label="Kebele ID" value={selectedUser.kebele_id?.startsWith('PENDING-') || selectedUser.kebele_id?.startsWith('GOOGLE-') ? 'Not provided' : selectedUser.kebele_id} />
                 <Info label="Coupon ID" value={selectedUser.coupon_id || 'Not provided'} />
                 <Info label="Verification" value={selectedUser.is_verified ? 'Verified' : 'Pending'} />
@@ -193,6 +208,27 @@ export default function UserManagement() {
                       <option value="support_admin">Support admin - users, orders, wallet, messages</option>
                     </select>
                     <Button type="button" onClick={updateAccess}>Save access</Button>
+                  </div>
+                </div>
+              )}
+              {selectedUser.role === 'manager' && (
+                <div className="rounded-lg border border-slate-200 bg-white p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <KeyRound size={18} className="text-amber-700" />
+                    <p className="text-sm font-black text-slate-950">Manager Kebele assignment</p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                    <input
+                      value={managerKebele}
+                      onChange={e => setManagerKebele(e.target.value)}
+                      placeholder="Bosa Addis Kebele"
+                      list="manager-kebele-options"
+                      className="ui-input"
+                    />
+                    <datalist id="manager-kebele-options">
+                      {managerKebeleSuggestions.map(kebele => <option key={kebele} value={kebele} />)}
+                    </datalist>
+                    <Button type="button" onClick={updateAccess}>Save Kebele</Button>
                   </div>
                 </div>
               )}
