@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, BarChart3, Box, PackageSearch } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
+import { resolveStorageUrl } from '../utils/storageUrl'
 
 const variants = {
   primary: 'bg-amber-400 text-slate-950 hover:bg-amber-300 border-amber-400',
@@ -154,11 +155,7 @@ export function StockBadge({ quantity }) {
 export function ProductImage({ product, className = 'h-44' }) {
   const { productName } = useLanguage()
   const [imageFailed, setImageFailed] = useState(false)
-  const apiBase = import.meta.env.VITE_API_URL || ''
-  const publicBase = apiBase.endsWith('/api') ? apiBase.slice(0, -4) : apiBase
-  const imageSrc = product?.image_path?.startsWith('/storage')
-    ? `${publicBase || 'http://127.0.0.1:8000'}${product.image_path}`
-    : product?.image_path
+  const imageSrc = resolveStorageUrl(product?.image_path)
 
   return (
     <div className={`relative overflow-hidden bg-slate-100 ${className}`}>

@@ -8,6 +8,7 @@ import { formatBirr } from '../../utils/currency'
 import api from '../../services/api'
 import { useLanguage } from '../../context/LanguageContext'
 import { useAuth } from '../../hooks/useAuth'
+import { resolveStorageUrl } from '../../utils/storageUrl'
 
 export default function ProductManagement() {
   const [products, setProducts] = useState([])
@@ -202,7 +203,7 @@ export default function ProductManagement() {
               <div className="grid gap-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 sm:grid-cols-[160px_1fr] sm:items-center">
                 <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg bg-white">
                   {imagePreview ? (
-                    <img src={imagePreview.startsWith('/storage') ? `${(import.meta.env.VITE_API_URL || '').replace(/\/api$/, '') || 'http://127.0.0.1:8000'}${imagePreview}` : imagePreview} alt="Product preview" className="h-full w-full object-cover" />
+                    <img src={resolveStorageUrl(imagePreview)} alt="Product preview" className="h-full w-full object-cover" />
                   ) : (
                     <ImagePlus className="text-slate-400" size={34} />
                   )}
