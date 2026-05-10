@@ -56,7 +56,7 @@ jobs:
       - name: Deploy to server via rsync
         uses: burnett01/rsync-deployments@7.0.1
         with:
-          switches: -avzr --delete --exclude=".env" --exclude="storage/logs" --exclude="storage/framework/sessions" --exclude="database/database.sqlite"
+          switches: -avzr --delete --exclude=".env" --exclude="storage/logs" --exclude="storage/framework/sessions" --exclude="storage/app/public" --exclude="database/database.sqlite"
           path: ./
           remote_path: ${{ secrets.DEPLOY_PATH }}
           remote_host: ${{ secrets.SERVER_HOST }}

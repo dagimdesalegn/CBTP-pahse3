@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, BarChart3, Box, PackageSearch } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
@@ -152,6 +153,7 @@ export function StockBadge({ quantity }) {
 
 export function ProductImage({ product, className = 'h-44' }) {
   const { productName } = useLanguage()
+  const [imageFailed, setImageFailed] = useState(false)
   const apiBase = import.meta.env.VITE_API_URL || ''
   const publicBase = apiBase.endsWith('/api') ? apiBase.slice(0, -4) : apiBase
   const imageSrc = product?.image_path?.startsWith('/storage')
@@ -160,8 +162,8 @@ export function ProductImage({ product, className = 'h-44' }) {
 
   return (
     <div className={`relative overflow-hidden bg-slate-100 ${className}`}>
-      {imageSrc ? (
-        <img src={imageSrc} alt={productName(product)} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+      {imageSrc && !imageFailed ? (
+        <img src={imageSrc} alt={productName(product)} onError={() => setImageFailed(true)} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
       ) : (
         <div className="flex h-full w-full items-center justify-center text-slate-400">
           <Box size={46} />
