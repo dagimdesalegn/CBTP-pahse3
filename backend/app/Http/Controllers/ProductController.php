@@ -28,7 +28,10 @@ class ProductController extends Controller
             });
         }
 
-        $products = $query->paginate($request->integer('per_page', 12));
+        $products = $query
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate($request->integer('per_page', 12));
 
         return response()->json($products);
     }

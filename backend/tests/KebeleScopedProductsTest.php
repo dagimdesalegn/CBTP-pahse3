@@ -26,6 +26,7 @@ foreach ($fields as $field) {
 $requiredSnippets = [
     'ProductController should assign manager-created products to manager_kebele' => "'kebele' => \$this->productKebeleForCreate(\$request)",
     'ProductController should enforce scoped product access' => 'ensureProductInUserScope',
+    'ProductController should return newest products first' => "orderByDesc('created_at')",
     'OrderController should reject cross-Kebele order items' => 'Product is not available in your Kebele',
     'OrderController should scope manager order queries' => 'whereHas(\'orderItems.product\'',
 ];
