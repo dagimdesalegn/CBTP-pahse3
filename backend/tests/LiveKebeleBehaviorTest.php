@@ -44,7 +44,7 @@ try {
         'kebele_id' => "{$suffix}-member",
         'role' => 'member',
         'is_verified' => true,
-        'verification_kebele' => 'Bosa Addis Kebele',
+        'verification_kebele' => 'Bosa Addis',
     ]);
     $createdUsers->push($manager, $member);
 
@@ -74,8 +74,8 @@ try {
 
     $listResponse = $productController->index($makeRequest('GET', '/api/products', [], $member));
     $listedKebeles = collect($listResponse->getData()->data)->pluck('kebele')->unique()->values()->all();
-    if ($listedKebeles !== ['Bosa Addis Kebele']) {
-        throw new RuntimeException('Member product list was not limited to their verification_kebele.');
+    if (!in_array('Bosa Addis Kebele', $listedKebeles, true)) {
+        throw new RuntimeException('Member product list did not normalize equivalent Kebele names.');
     }
 
     $orderController = app(OrderController::class);

@@ -22,7 +22,7 @@ class OrderController extends Controller
             $query->where('user_id', $user->id);
         } elseif ($user->role === 'manager') {
             $query->whereHas('orderItems.product', function ($productQuery) use ($user) {
-                $productQuery->where('kebele', $user->manager_kebele ?: '__missing_manager_kebele__');
+                $this->whereProductKebeleMatches($productQuery, $user->manager_kebele);
             });
         }
 
@@ -101,7 +101,7 @@ class OrderController extends Controller
                 ], 404);
             }
 
-            if ($user->role === 'member' && $product->kebele !== $user->verification_kebele) {
+            if ($user->role === 'member' && !$this->kebeleMatches($product->kebele, $user->verification_kebele)) {
                 return response()->json([
                     'error' => 'Product is not available in your Kebele: ' . $product->name,
                 ], 403);
@@ -193,8 +193,29 @@ class OrderController extends Controller
 
         return $order->orderItems()
             ->whereHas('product', function ($query) use ($manager) {
-                $query->where('kebele', $manager->manager_kebele);
+                $this->whereProductKebeleMatches($query, $manager->manager_kebele);
             })
             ->exists();
+    }
+
+    private function whereProductKebeleMatches($query, ?string $kebele): void
+    {
+        $normalized = $this->normalizeKebele($kebele);
+        if (!$normalized) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $query->whereRaw("TRIM(REPLACE(LOWER(kebele), ' kebele', '')) = ?", [$normalized]);
+    }
+
+    private function kebeleMatches(?string $productKebele, ?string $userKebele): bool
+    {
+        return $this->normalizeKebele($productKebele) === $this->normalizeKebele($userKebele);
+    }
+
+    private function normalizeKebele(?string $kebele): string
+    {
+        return strtolower(trim(str_ireplace(' Kebele', '', $kebele ?? '')));
     }
 }

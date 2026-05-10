@@ -162,17 +162,17 @@ class ProductController extends Controller
         }
 
         if ($user->role === 'member') {
-            $query->where('kebele', $user->verification_kebele ?: '__missing_member_kebele__');
+            $this->whereKebeleMatches($query, $user->verification_kebele);
             return;
         }
 
         if ($user->role === 'manager') {
-            $query->where('kebele', $user->manager_kebele ?: '__missing_manager_kebele__');
+            $this->whereKebeleMatches($query, $user->manager_kebele);
             return;
         }
 
         if ($user->role === 'admin' && $request->filled('kebele')) {
-            $query->where('kebele', $request->input('kebele'));
+            $this->whereKebeleMatches($query, $request->input('kebele'));
         }
     }
 
@@ -194,11 +194,11 @@ class ProductController extends Controller
         }
 
         if ($user->role === 'member') {
-            return $product->kebele === $user->verification_kebele;
+            return $this->normalizeKebele($product->kebele) === $this->normalizeKebele($user->verification_kebele);
         }
 
         if ($user->role === 'manager') {
-            return $product->kebele === $user->manager_kebele;
+            return $this->normalizeKebele($product->kebele) === $this->normalizeKebele($user->manager_kebele);
         }
 
         return true;
@@ -207,5 +207,21 @@ class ProductController extends Controller
     private function ensureProductInUserScope(Product $product, $user): void
     {
         abort_unless($this->productIsInUserScope($product, $user), 404, 'Product not found');
+    }
+
+    private function whereKebeleMatches($query, ?string $kebele): void
+    {
+        $normalized = $this->normalizeKebele($kebele);
+        if (!$normalized) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $query->whereRaw("TRIM(REPLACE(LOWER(kebele), ' kebele', '')) = ?", [$normalized]);
+    }
+
+    private function normalizeKebele(?string $kebele): string
+    {
+        return strtolower(trim(str_ireplace(' Kebele', '', $kebele ?? '')));
     }
 }
