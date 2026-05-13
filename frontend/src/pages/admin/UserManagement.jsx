@@ -264,10 +264,10 @@ export default function UserManagement() {
                 </div>
               )}
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Kebele ID / Fayda / Plan</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Kebele ID / Fayda ID</p>
                 {selectedImageUrl ? (
                   <div className="mt-3 space-y-2">
-                    <img src={selectedImageUrl} alt="Kebele ID / Fayda / Plan" className="max-h-72 w-full rounded-lg border border-slate-200 object-contain" />
+                    <img src={selectedImageUrl} alt="Kebele ID / Fayda ID" className="max-h-72 w-full rounded-lg border border-slate-200 object-contain" />
                     <a href={selectedImageUrl} target="_blank" rel="noreferrer" className="text-sm font-bold text-amber-700">Open full image</a>
                   </div>
                 ) : (

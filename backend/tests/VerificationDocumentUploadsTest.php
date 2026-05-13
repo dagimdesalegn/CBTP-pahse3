@@ -14,7 +14,7 @@ $expectations = [
     [$model, "'coupon_id_image_path'", 'User model should allow coupon ID image path assignment.'],
     [$migrations, "string('coupon_id_image_path')", 'Migration should add coupon_id_image_path.'],
     [$profile, 'name="coupon_id_image"', 'Verification form should include coupon image upload.'],
-    [$profile, 'Kebele ID / Fayda / Plan', 'Verification form should relabel identity document upload.'],
+    [$profile, 'Kebele ID / Fayda ID', 'Verification form should relabel identity document upload.'],
     [$profile, 'name="kebele_id"', 'Verification form should remove typed Kebele ID field.', false],
     [$profile, 'name="coupon_id"', 'Verification form should remove typed Coupon ID field.', false],
     [$admin, 'selectedCouponImageUrl', 'Admin review should expose coupon image URL.'],

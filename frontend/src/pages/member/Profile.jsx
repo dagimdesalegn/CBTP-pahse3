@@ -107,7 +107,7 @@ export default function Profile() {
     if (verificationData.kebele_id_image.size > 10 * 1024 * 1024) {
       setToast({
         type: 'error',
-        message: 'Kebele ID / Fayda / Plan document must be 10MB or less',
+        message: 'Kebele ID / Fayda ID document must be 10MB or less',
       })
       return
     }
@@ -276,30 +276,6 @@ export default function Profile() {
                 </div>
               )}
 
-              <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-5">
-                <h2 className="text-lg font-black text-red-900">Delete account</h2>
-                <p className="mt-2 text-sm font-semibold leading-6 text-red-800">
-                  This permanently deletes your account, orders, wallet activity, messages, and verification data. This cannot be undone.
-                </p>
-                <label className="mt-4 block">
-                  <span className="block text-sm font-bold text-red-900">Type DELETE to confirm</span>
-                  <input
-                    value={deleteConfirmation}
-                    onChange={(event) => setDeleteConfirmation(event.target.value)}
-                    className="mt-2 w-full rounded-lg border border-red-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
-                    placeholder="DELETE"
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={handleDeleteAccount}
-                  disabled={deletingAccount || deleteConfirmation !== 'DELETE'}
-                  className="mt-4 w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-black text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
-                >
-                  {deletingAccount ? 'Deleting...' : 'Delete account'}
-                </button>
-              </div>
-
               {user?.role === 'member' && !user?.is_verified && (
                 <div className="mt-6 space-y-4">
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -402,7 +378,7 @@ export default function Profile() {
                         <p className="text-xs text-gray-500 mt-1">Format: +2519xxxxxxxx, 09xxxxxxxx, or 9xxxxxxxx</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Kebele ID / Fayda / Plan</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Kebele ID / Fayda ID</label>
                         <input
                           type="file"
                           name="kebele_id_image"
@@ -450,6 +426,30 @@ export default function Profile() {
                   )}
                 </div>
               )}
+
+              <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-5">
+                <h2 className="text-lg font-black text-red-900">Delete account</h2>
+                <p className="mt-2 text-sm font-semibold leading-6 text-red-800">
+                  This permanently deletes your account, orders, wallet activity, messages, and verification data. This cannot be undone.
+                </p>
+                <label className="mt-4 block">
+                  <span className="block text-sm font-bold text-red-900">Type DELETE to confirm</span>
+                  <input
+                    value={deleteConfirmation}
+                    onChange={(event) => setDeleteConfirmation(event.target.value)}
+                    className="mt-2 w-full rounded-lg border border-red-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+                    placeholder="DELETE"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={deletingAccount || deleteConfirmation !== 'DELETE'}
+                  className="mt-4 w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-black text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
+                >
+                  {deletingAccount ? 'Deleting...' : 'Delete account'}
+                </button>
+              </div>
       </AppLayout>
 
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}

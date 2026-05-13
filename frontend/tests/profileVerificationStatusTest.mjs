@@ -15,4 +15,11 @@ for (const [needle, message] of expectations) {
   }
 }
 
+const verificationIndex = profile.indexOf('Verification Request')
+const deleteIndex = profile.indexOf('Delete account')
+
+if (verificationIndex === -1 || deleteIndex === -1 || verificationIndex > deleteIndex) {
+  throw new Error('Verification request should appear before delete account.')
+}
+
 console.log('Profile verification status copy is present.')
