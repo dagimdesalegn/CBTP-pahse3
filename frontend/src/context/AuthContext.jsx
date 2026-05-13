@@ -8,13 +8,54 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  const updateUser = (userData) => {
+    setUser(userData)
+    localStorage.setItem('user', JSON.stringify(userData))
+  }
+
+  const refreshUser = async () => {
+    const token = localStorage.getItem('token')
+    if (!token) return null
+
+    try {
+      const response = await api.get('/me')
+      updateUser(response.data)
+      return response.data
+    } catch (err) {
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        setUser(null)
+      }
+      return null
+    }
+  }
+
   useEffect(() => {
     const storedUser = localStorage.getItem('user')
     if (storedUser) {
       setUser(JSON.parse(storedUser))
     }
-    setLoading(false)
+    refreshUser().finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    if (!user) return undefined
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshUser()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    const refreshInterval = setInterval(refreshUser, 30000)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearInterval(refreshInterval)
+    }
+  }, [user?.id])
 
   const register = async (data) => {
     try {
@@ -60,13 +101,8 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const updateUser = (userData) => {
-    setUser(userData)
-    localStorage.setItem('user', JSON.stringify(userData))
-  }
-
   return (
-    <AuthContext.Provider value={{ user, loading, error, register, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, error, register, login, logout, refreshUser, updateUser }}>
       {children}
     </AuthContext.Provider>
   )

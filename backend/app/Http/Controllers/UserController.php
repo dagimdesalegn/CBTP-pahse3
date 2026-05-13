@@ -51,12 +51,17 @@ class UserController extends Controller
         abort_unless($request->user()->hasAccess('users'), 403);
 
         $validated = $request->validate([
+            'role' => 'nullable|in:member,manager,admin',
             'access_level' => 'nullable|in:super_admin,operations_admin,report_admin,support_admin',
             'membership_status' => 'nullable|in:active,suspended,inactive',
             'manager_kebele' => 'nullable|string|max:255',
         ]);
 
         $user = User::findOrFail($id);
+
+        if (($validated['role'] ?? $user->role) !== 'manager') {
+            $validated['manager_kebele'] = null;
+        }
 
         $user->update($validated);
 

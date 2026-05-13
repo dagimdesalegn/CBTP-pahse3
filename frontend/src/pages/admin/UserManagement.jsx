@@ -17,6 +17,7 @@ export default function UserManagement() {
   const [walletAmount, setWalletAmount] = useState('')
   const [walletDescription, setWalletDescription] = useState('')
   const [accessLevel, setAccessLevel] = useState('')
+  const [selectedRole, setSelectedRole] = useState('member')
   const [managerKebele, setManagerKebele] = useState('')
 
   const apiBase = import.meta.env.VITE_API_URL || ''
@@ -58,6 +59,7 @@ export default function UserManagement() {
 
   const openDetails = (user) => {
     setSelectedUser(user)
+    setSelectedRole(user.role || 'member')
     setAccessLevel(user.access_level || 'super_admin')
     setManagerKebele(user.manager_kebele || '')
     setWalletAmount('')
@@ -67,11 +69,13 @@ export default function UserManagement() {
   const updateAccess = async () => {
     try {
       await api.put(`/users/${selectedUser.id}/access`, {
-        access_level: selectedUser.role === 'admin' ? accessLevel : selectedUser.access_level,
+        role: selectedRole,
+        access_level: selectedRole === 'admin' ? accessLevel : selectedUser.access_level,
         membership_status: selectedUser.membership_status || 'active',
-        manager_kebele: selectedUser.role === 'manager' ? managerKebele.trim() : selectedUser.manager_kebele,
+        manager_kebele: selectedRole === 'manager' ? managerKebele.trim() : '',
       })
       setToast({ type: 'success', message: 'Access updated' })
+      setSelectedUser(prev => prev ? { ...prev, role: selectedRole, access_level: selectedRole === 'admin' ? accessLevel : prev.access_level, manager_kebele: selectedRole === 'manager' ? managerKebele.trim() : '' } : prev)
       fetchUsers()
     } catch (err) {
       setToast({ type: 'error', message: 'Failed to update access' })
@@ -194,7 +198,21 @@ export default function UserManagement() {
                 <Info label="Verification" value={selectedUser.is_verified ? 'Verified' : 'Pending'} />
                 <Info label="Submitted At" value={selectedUser.verification_submitted_at ? new Date(selectedUser.verification_submitted_at).toLocaleString() : 'Not submitted'} />
               </div>
-              {selectedUser.role === 'admin' && (
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <KeyRound size={18} className="text-amber-700" />
+                  <p className="text-sm font-black text-slate-950">Role assignment</p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                  <select name="role" value={selectedRole} onChange={e => setSelectedRole(e.target.value)} className="ui-input">
+                    <option value="member">Member</option>
+                    <option value="manager">Manager</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                  <Button type="button" onClick={updateAccess}>Save role</Button>
+                </div>
+              </div>
+              {selectedRole === 'admin' && (
                 <div className="rounded-lg border border-slate-200 bg-white p-4">
                   <div className="mb-3 flex items-center gap-2">
                     <KeyRound size={18} className="text-amber-700" />
@@ -211,7 +229,7 @@ export default function UserManagement() {
                   </div>
                 </div>
               )}
-              {selectedUser.role === 'manager' && (
+              {selectedRole === 'manager' && (
                 <div className="rounded-lg border border-slate-200 bg-white p-4">
                   <div className="mb-3 flex items-center gap-2">
                     <KeyRound size={18} className="text-amber-700" />
