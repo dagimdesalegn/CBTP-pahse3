@@ -35,6 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::delete('/account', [AuthController::class, 'deleteAccount']);
 
     // Products - All users can view
     Route::get('/products', [ProductController::class, 'index']);

@@ -238,6 +238,18 @@ class AuthController extends Controller
         ]);
     }
 
+    public function deleteAccount(Request $request)
+    {
+        $user = $request->user();
+
+        $user->tokens()->delete();
+        $user->delete();
+
+        return response()->json([
+            'message' => 'Account deleted successfully.',
+        ]);
+    }
+
     public function me(Request $request)
     {
         return response()->json($request->user());

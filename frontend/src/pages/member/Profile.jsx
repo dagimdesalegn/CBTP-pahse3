@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import AppLayout from '../../components/AppLayout'
 import { useAuth } from '../../hooks/useAuth'
 import { CreditCard, Shield, Mail, Phone } from 'lucide-react'
@@ -10,6 +11,7 @@ import { getCitySuggestions, getKebeleSuggestions, getRegionSuggestions, getWore
 
 export default function Profile() {
   const { user, updateUser } = useAuth()
+  const navigate = useNavigate()
   const [verificationData, setVerificationData] = useState({
     verification_region: '',
     verification_city: '',
@@ -22,6 +24,8 @@ export default function Profile() {
   const [selectedFileName, setSelectedFileName] = useState('')
   const [selectedCouponFileName, setSelectedCouponFileName] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [deleteConfirmation, setDeleteConfirmation] = useState('')
+  const [deletingAccount, setDeletingAccount] = useState(false)
   const [toast, setToast] = useState(null)
   const [wallet, setWallet] = useState(null)
   const kebeleDisplay = user?.kebele_id?.startsWith('PENDING-') || user?.kebele_id?.startsWith('GOOGLE-')
@@ -158,6 +162,25 @@ export default function Profile() {
     }
   }
 
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== 'DELETE') {
+      setToast({ type: 'error', message: 'Type DELETE to confirm account deletion.' })
+      return
+    }
+
+    setDeletingAccount(true)
+    try {
+      await api.delete('/account')
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      navigate('/login', { replace: true })
+    } catch (error) {
+      setToast({ type: 'error', message: error.response?.data?.message || 'Failed to delete account.' })
+    } finally {
+      setDeletingAccount(false)
+    }
+  }
+
   return (
     <>
       <AppLayout maxWidth="max-w-2xl">
@@ -248,6 +271,30 @@ export default function Profile() {
                   </SectionCard>
                 </div>
               )}
+
+              <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-5">
+                <h2 className="text-lg font-black text-red-900">Delete account</h2>
+                <p className="mt-2 text-sm font-semibold leading-6 text-red-800">
+                  This permanently deletes your account, orders, wallet activity, messages, and verification data. This cannot be undone.
+                </p>
+                <label className="mt-4 block">
+                  <span className="block text-sm font-bold text-red-900">Type DELETE to confirm</span>
+                  <input
+                    value={deleteConfirmation}
+                    onChange={(event) => setDeleteConfirmation(event.target.value)}
+                    className="mt-2 w-full rounded-lg border border-red-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+                    placeholder="DELETE"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={deletingAccount || deleteConfirmation !== 'DELETE'}
+                  className="mt-4 w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-black text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
+                >
+                  {deletingAccount ? 'Deleting...' : 'Delete account'}
+                </button>
+              </div>
 
               {user?.role === 'member' && !user?.is_verified && (
                 <div className="mt-6 space-y-4">
