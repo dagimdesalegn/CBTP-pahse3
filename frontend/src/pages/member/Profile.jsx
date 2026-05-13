@@ -15,12 +15,12 @@ export default function Profile() {
     verification_city: '',
     verification_woreda_subcity: '',
     verification_kebele: '',
-    kebele_id: '',
-    coupon_id: '',
     kebele_id_image: null,
+    coupon_id_image: null,
     phone: '',
   })
   const [selectedFileName, setSelectedFileName] = useState('')
+  const [selectedCouponFileName, setSelectedCouponFileName] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState(null)
   const [wallet, setWallet] = useState(null)
@@ -57,10 +57,15 @@ export default function Profile() {
 
   const handleVerificationChange = (e) => {
     const { name, value, files } = e.target
-    if (name === 'kebele_id_image') {
+    if (name === 'kebele_id_image' || name === 'coupon_id_image') {
       const file = files?.[0] || null
-      setVerificationData((prev) => ({ ...prev, kebele_id_image: file }))
-      setSelectedFileName(file ? `${file.name} (${Math.ceil(file.size / 1024)} KB)` : '')
+      setVerificationData((prev) => ({ ...prev, [name]: file }))
+      const label = file ? `${file.name} (${Math.ceil(file.size / 1024)} KB)` : ''
+      if (name === 'kebele_id_image') {
+        setSelectedFileName(label)
+      } else {
+        setSelectedCouponFileName(label)
+      }
       return
     }
     setVerificationData((prev) => ({ ...prev, [name]: value }))
@@ -72,7 +77,15 @@ export default function Profile() {
     if (!verificationData.kebele_id_image || !(verificationData.kebele_id_image instanceof File)) {
       setToast({
         type: 'error',
-        message: 'Please upload a kebele ID image (file not detected).',
+        message: 'Please upload a Kebele ID, Fayda, or plan document image.',
+      })
+      return
+    }
+
+    if (!verificationData.coupon_id_image || !(verificationData.coupon_id_image instanceof File)) {
+      setToast({
+        type: 'error',
+        message: 'Please upload a coupon ID image.',
       })
       return
     }
@@ -80,7 +93,15 @@ export default function Profile() {
     if (verificationData.kebele_id_image.size > 10 * 1024 * 1024) {
       setToast({
         type: 'error',
-        message: 'Kebele ID image must be 10MB or less',
+        message: 'Kebele ID / Fayda / Plan document must be 10MB or less',
+      })
+      return
+    }
+
+    if (verificationData.coupon_id_image.size > 10 * 1024 * 1024) {
+      setToast({
+        type: 'error',
+        message: 'Coupon ID image must be 10MB or less',
       })
       return
     }
@@ -104,10 +125,9 @@ export default function Profile() {
       formData.append('verification_city', verificationData.verification_city.trim())
       formData.append('verification_woreda_subcity', verificationData.verification_woreda_subcity.trim())
       formData.append('verification_kebele', verificationData.verification_kebele.trim())
-      formData.append('kebele_id', verificationData.kebele_id.trim())
-      formData.append('coupon_id', verificationData.coupon_id.trim())
       if (normalizedPhone) formData.append('phone', normalizedPhone)
       formData.append('kebele_id_image', verificationData.kebele_id_image)
+      formData.append('coupon_id_image', verificationData.coupon_id_image)
 
       const response = await api.post('/users/verification', formData)
 
@@ -118,11 +138,12 @@ export default function Profile() {
         verification_city: '',
         verification_woreda_subcity: '',
         verification_kebele: '',
-        kebele_id: '',
-        coupon_id: '',
         kebele_id_image: null,
+        coupon_id_image: null,
         phone: '',
       })
+      setSelectedFileName('')
+      setSelectedCouponFileName('')
     } catch (error) {
       const validationErrors = error.response?.data?.errors
         ? Object.values(error.response.data.errors).flat().join(' ')
@@ -240,7 +261,7 @@ export default function Profile() {
                       </p>
                     ) : (
                       <p className="text-yellow-700 text-sm mt-2">
-                        Submit your kebele ID, coupon ID, and ID image to begin verification.
+                        Submit your address, identity document, and coupon ID image to begin verification.
                       </p>
                     )}
                   </div>
@@ -315,30 +336,6 @@ export default function Profile() {
                         </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Kebele ID</label>
-                        <input
-                          type="text"
-                          name="kebele_id"
-                          value={verificationData.kebele_id}
-                          onChange={handleVerificationChange}
-                          placeholder="Enter your kebele ID"
-                          required
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Coupon ID</label>
-                        <input
-                          type="text"
-                          name="coupon_id"
-                          value={verificationData.coupon_id}
-                          onChange={handleVerificationChange}
-                          placeholder="Enter your coupon ID"
-                          required
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">🇪🇹 Phone Number (Optional)</label>
                         <input
                           type="tel"
@@ -352,7 +349,7 @@ export default function Profile() {
                         <p className="text-xs text-gray-500 mt-1">Format: +2519xxxxxxxx, 09xxxxxxxx, or 9xxxxxxxx</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Kebele ID Image</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Kebele ID / Fayda / Plan</label>
                         <input
                           type="file"
                           name="kebele_id_image"
@@ -363,6 +360,20 @@ export default function Profile() {
                         />
                         {selectedFileName && (
                           <p className="text-xs text-gray-500 mt-1">Selected: {selectedFileName}</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Coupon ID Image</label>
+                        <input
+                          type="file"
+                          name="coupon_id_image"
+                          accept="image/*,application/pdf,.heic,.heif,.webp"
+                          onChange={handleVerificationChange}
+                          required
+                          className="w-full text-sm text-gray-600"
+                        />
+                        {selectedCouponFileName && (
+                          <p className="text-xs text-gray-500 mt-1">Selected: {selectedCouponFileName}</p>
                         )}
                       </div>
                       <button

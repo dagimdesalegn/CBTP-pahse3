@@ -18,6 +18,7 @@ class User extends Authenticatable
         'password',
         'kebele_id',
         'kebele_id_image_path',
+        'coupon_id_image_path',
         'coupon_id',
         'verification_submitted_at',
         'verification_region',

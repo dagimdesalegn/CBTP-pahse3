@@ -6,7 +6,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Services\NotificationService;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -138,14 +137,8 @@ class UserController extends Controller
             'verification_city' => 'required|string|max:255',
             'verification_woreda_subcity' => 'required|string|max:255',
             'verification_kebele' => 'required|string|max:255',
-            'kebele_id' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('users', 'kebele_id')->ignore($user->id),
-            ],
-            'coupon_id' => 'required|string|max:255',
             'kebele_id_image' => 'required|file|mimes:jpg,jpeg,png,webp,heic,heif,pdf|max:10240',
+            'coupon_id_image' => 'required|file|mimes:jpg,jpeg,png,webp,heic,heif,pdf|max:10240',
             'phone' => [
                 'nullable',
                 'string',
@@ -158,23 +151,33 @@ class UserController extends Controller
         $file = $request->file('kebele_id_image');
         if (!$file || !$file->isValid()) {
             return response()->json([
-                'message' => 'The kebele id image failed to upload.',
+                'message' => 'The identity document failed to upload.',
                 'errors' => [
-                    'kebele_id_image' => ['The kebele id image failed to upload.'],
+                    'kebele_id_image' => ['The identity document failed to upload.'],
+                ],
+            ], 422);
+        }
+
+        $couponFile = $request->file('coupon_id_image');
+        if (!$couponFile || !$couponFile->isValid()) {
+            return response()->json([
+                'message' => 'The coupon ID image failed to upload.',
+                'errors' => [
+                    'coupon_id_image' => ['The coupon ID image failed to upload.'],
                 ],
             ], 422);
         }
 
         $path = $file->store('verification-ids', 'public');
+        $couponPath = $couponFile->store('verification-coupons', 'public');
 
         $updateData = [
             'verification_region' => $validated['verification_region'],
             'verification_city' => $validated['verification_city'],
             'verification_woreda_subcity' => $validated['verification_woreda_subcity'],
             'verification_kebele' => $validated['verification_kebele'],
-            'kebele_id' => $validated['kebele_id'],
-            'coupon_id' => $validated['coupon_id'],
             'kebele_id_image_path' => $path,
+            'coupon_id_image_path' => $couponPath,
             'verification_submitted_at' => now(),
             'is_verified' => false,
         ];

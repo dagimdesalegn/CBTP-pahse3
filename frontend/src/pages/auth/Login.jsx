@@ -85,6 +85,9 @@ export default function Login() {
                   <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="ui-input pl-10" />
                 </span>
               </label>
+              <div className="text-right">
+                <Link to="/forgot-password" className="text-sm font-bold text-amber-700 hover:text-amber-800">Forgot password?</Link>
+              </div>
               <Button type="submit" disabled={loading} className="w-full">{loading ? t('auth.signingIn') : t('auth.signInButton')}</Button>
             </form>
 

@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use App\Services\NotificationService;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
@@ -128,6 +132,97 @@ class AuthController extends Controller
             'message' => 'Login successful',
             'user' => $user,
             'token' => $token,
+        ]);
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $email = strtolower(trim($validated['email']));
+        $user = User::where('email', $email)->first();
+
+        if ($user) {
+            $plainToken = Str::random(64);
+            DB::table('password_reset_tokens')->updateOrInsert(
+                ['email' => $email],
+                [
+                    'token' => Hash::make($plainToken),
+                    'created_at' => now(),
+                ]
+            );
+
+            $frontendUrl = rtrim(config('app.app.frontend_url', config('app.app.url')), '/');
+            $resetUrl = $frontendUrl . '/reset-password?token=' . urlencode($plainToken) . '&email=' . urlencode($email);
+
+            try {
+                Http::withToken(config('services.resend.api_key'))
+                    ->acceptJson()
+                    ->post('https://api.resend.com/emails', [
+                        'from' => config('services.resend.from'),
+                        'to' => [$email],
+                        'subject' => 'Reset your Shemachoch password',
+                        'html' => view('emails.password-reset', [
+                            'name' => $user->name,
+                            'resetUrl' => $resetUrl,
+                        ])->render(),
+                    ])
+                    ->throw();
+            } catch (\Throwable $e) {
+                Log::error('Password reset email failed: ' . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'message' => 'If an account exists for this email, a password reset link has been sent.',
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'token' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $email = strtolower(trim($validated['email']));
+        $reset = DB::table('password_reset_tokens')->where('email', $email)->first();
+
+        if (
+            !$reset ||
+            !Hash::check($validated['token'], $reset->token) ||
+            Carbon::parse($reset->created_at)->lt(now()->subMinutes(60))
+        ) {
+            return response()->json([
+                'message' => 'This password reset link is invalid or expired.',
+                'errors' => [
+                    'token' => ['This password reset link is invalid or expired.'],
+                ],
+            ], 422);
+        }
+
+        $user = User::where('email', $email)->first();
+        if (!$user) {
+            return response()->json([
+                'message' => 'This password reset link is invalid or expired.',
+                'errors' => [
+                    'email' => ['This password reset link is invalid or expired.'],
+                ],
+            ], 422);
+        }
+
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        DB::table('password_reset_tokens')->where('email', $email)->delete();
+        $user->tokens()->delete();
+
+        return response()->json([
+            'message' => 'Password reset successfully. Please sign in with your new password.',
         ]);
     }
 

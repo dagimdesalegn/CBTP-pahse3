@@ -8,6 +8,8 @@ import api from './services/api'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import GoogleCallback from './pages/auth/GoogleCallback'
+import ForgotPassword from './pages/auth/ForgotPassword'
+import ResetPassword from './pages/auth/ResetPassword'
 import MemberDashboard from './pages/member/Dashboard'
 import MemberProducts from './pages/member/Products'
 import ProductDetail from './pages/member/ProductDetail'
@@ -73,6 +75,8 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/auth/google/callback" element={<GoogleCallback />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Dashboard router - redirects based on role */}
       <Route path="/dashboard" element={<RoleBasedDashboard />} />

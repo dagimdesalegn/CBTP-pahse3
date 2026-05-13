@@ -23,6 +23,7 @@ export default function UserManagement() {
   const apiBase = import.meta.env.VITE_API_URL || ''
   const publicBase = apiBase.endsWith('/api') ? apiBase.slice(0, -4) : apiBase
   const selectedImageUrl = selectedUser?.kebele_id_image_path ? `${publicBase}/storage/${selectedUser.kebele_id_image_path}` : null
+  const selectedCouponImageUrl = selectedUser?.coupon_id_image_path ? `${publicBase}/storage/${selectedUser.coupon_id_image_path}` : null
   const managerKebeleSuggestions = useMemo(() => {
     const kebeles = getKebeleSuggestions('', '', '', managerKebele)
     const values = ['Bosa Addis Kebele', ...kebeles, ...kebeles.map(kebele => `${kebele} Kebele`)]
@@ -194,7 +195,6 @@ export default function UserManagement() {
                 <Info label="Woreda/Sub-city" value={selectedUser.verification_woreda_subcity || 'Not provided'} />
                 <Info label="Kebele" value={selectedUser.verification_kebele || 'Not provided'} />
                 <Info label="Kebele ID" value={selectedUser.kebele_id?.startsWith('PENDING-') || selectedUser.kebele_id?.startsWith('GOOGLE-') ? 'Not provided' : selectedUser.kebele_id} />
-                <Info label="Coupon ID" value={selectedUser.coupon_id || 'Not provided'} />
                 <Info label="Verification" value={selectedUser.is_verified ? 'Verified' : 'Pending'} />
                 <Info label="Submitted At" value={selectedUser.verification_submitted_at ? new Date(selectedUser.verification_submitted_at).toLocaleString() : 'Not submitted'} />
               </div>
@@ -264,11 +264,22 @@ export default function UserManagement() {
                 </div>
               )}
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Kebele ID Image</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Kebele ID / Fayda / Plan</p>
                 {selectedImageUrl ? (
                   <div className="mt-3 space-y-2">
-                    <img src={selectedImageUrl} alt="Kebele ID" className="max-h-72 w-full rounded-lg border border-slate-200 object-contain" />
+                    <img src={selectedImageUrl} alt="Kebele ID / Fayda / Plan" className="max-h-72 w-full rounded-lg border border-slate-200 object-contain" />
                     <a href={selectedImageUrl} target="_blank" rel="noreferrer" className="text-sm font-bold text-amber-700">Open full image</a>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm font-semibold text-slate-700">Not uploaded</p>
+                )}
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Coupon ID Image</p>
+                {selectedCouponImageUrl ? (
+                  <div className="mt-3 space-y-2">
+                    <img src={selectedCouponImageUrl} alt="Coupon ID" className="max-h-72 w-full rounded-lg border border-slate-200 object-contain" />
+                    <a href={selectedCouponImageUrl} target="_blank" rel="noreferrer" className="text-sm font-bold text-amber-700">Open coupon image</a>
                   </div>
                 ) : (
                   <p className="mt-2 text-sm font-semibold text-slate-700">Not uploaded</p>

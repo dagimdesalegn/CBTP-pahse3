@@ -21,4 +21,9 @@ return [
         'return_url' => env('CHAPA_RETURN_URL', rtrim(env('FRONTEND_URL', 'http://localhost:5173'), '/')),
         'currency' => env('CHAPA_CURRENCY', 'ETB'),
     ],
+
+    'resend' => [
+        'api_key' => env('RESEND_API_KEY'),
+        'from' => env('RESEND_FROM_EMAIL', 'Shemachoch <onboarding@resend.dev>'),
+    ],
 ];
