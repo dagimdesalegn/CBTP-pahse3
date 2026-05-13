@@ -31,6 +31,16 @@ export default function Profile() {
   const kebeleDisplay = user?.kebele_id?.startsWith('PENDING-') || user?.kebele_id?.startsWith('GOOGLE-')
     ? 'Not provided'
     : user?.kebele_id
+  const verificationStatusLabel = user?.is_verified
+    ? 'Verified'
+    : user?.verification_submitted_at ? 'Pending Verification' : 'Verification Required'
+  const verificationStatusBgClass = user?.is_verified
+    ? 'bg-green-100'
+    : user?.verification_submitted_at ? 'bg-yellow-100' : 'bg-blue-100'
+  const verificationStatusTextClass = user?.is_verified
+    ? 'text-green-800'
+    : user?.verification_submitted_at ? 'text-yellow-800' : 'text-blue-800'
+  const verificationStatusIcon = user?.is_verified ? '✓' : user?.verification_submitted_at ? '⦿' : '!'
   const regionSuggestions = useMemo(() => getRegionSuggestions(verificationData.verification_region), [verificationData.verification_region])
   const citySuggestions = useMemo(
     () => getCitySuggestions(verificationData.verification_region, verificationData.verification_city),
@@ -224,15 +234,9 @@ export default function Profile() {
                       <label className="text-sm font-semibold text-gray-700">Verification Status</label>
                     </div>
                     <div className="ml-8">
-                      {user?.is_verified ? (
-                        <span className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                          ✓ Verified
-                        </span>
-                      ) : (
-                        <span className="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
-                          ⦿ Pending Verification
-                        </span>
-                      )}
+                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${verificationStatusBgClass} ${verificationStatusTextClass}`}>
+                        {verificationStatusIcon} {verificationStatusLabel}
+                      </span>
                     </div>
                   </div>
 
@@ -300,7 +304,9 @@ export default function Profile() {
                 <div className="mt-6 space-y-4">
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <p className="text-yellow-800">
-                      Your account is pending verification by an administrator. You won't be able to place orders until your account is verified.
+                      {user?.verification_submitted_at
+                        ? 'Your verification request is pending admin approval.'
+                        : 'Submit your verification request to activate ordering.'}
                     </p>
                     {user?.verification_submitted_at ? (
                       <p className="text-yellow-700 text-sm mt-2">
