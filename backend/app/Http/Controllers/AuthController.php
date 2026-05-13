@@ -159,6 +159,9 @@ class AuthController extends Controller
 
             try {
                 Http::withToken(config('services.resend.api_key'))
+                    ->withHeaders([
+                        'User-Agent' => 'Shemachoch/1.0 (+https://shemachoch.tech)',
+                    ])
                     ->acceptJson()
                     ->post('https://api.resend.com/emails', [
                         'from' => config('services.resend.from'),

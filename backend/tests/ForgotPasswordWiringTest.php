@@ -18,6 +18,7 @@ $expectations = [
     [$authController, 'public function resetPassword', 'AuthController should expose resetPassword.'],
     [$authController, "DB::table('password_reset_tokens')", 'AuthController should use password_reset_tokens table.'],
     [$authController, 'Http::withToken(config(\'services.resend.api_key\'))', 'AuthController should send reset email through Resend.'],
+    [$authController, "'User-Agent' => 'Shemachoch/1.0 (+https://shemachoch.tech)'", 'Resend request should include a User-Agent accepted by Cloudflare.'],
     [$authController, "Hash::make(\$validated['password'])", 'AuthController should hash the new password.'],
     [$routes, "Route::post('/password/forgot'", 'API should expose forgot-password route.'],
     [$routes, "Route::post('/password/reset'", 'API should expose reset-password route.'],
