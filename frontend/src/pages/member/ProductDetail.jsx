@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ShoppingCart, Truck } from 'lucide-react'
 import AppLayout from '../../components/AppLayout'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import Toast from '../../components/Toast'
+import CartDrawer from '../../components/CartDrawer'
 import { Button, ProductImage, StockBadge } from '../../components/ui'
 import { formatBirr } from '../../utils/currency'
 import { useAuth } from '../../hooks/useAuth'
@@ -12,10 +13,15 @@ import api from '../../services/api'
 
 export default function ProductDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const { t, productName, productDescription, categoryLabel } = useLanguage()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [cart, setCart] = useState([])
+  const [showCartModal, setShowCartModal] = useState(false)
+  const [fulfillmentType, setFulfillmentType] = useState('pickup')
+  const [deliveryAddress, setDeliveryAddress] = useState('')
   const [toast, setToast] = useState(null)
 
   useEffect(() => {
@@ -34,7 +40,7 @@ export default function ProductDetail() {
     }
   }
 
-  const orderSingleProduct = async () => {
+  const handleAddToCart = () => {
     if (!user?.is_verified) {
       setToast({ type: 'error', message: t('products.verifyBeforeBuying') })
       return
@@ -43,13 +49,45 @@ export default function ProductDetail() {
       setToast({ type: 'error', message: t('products.outOfStock') })
       return
     }
+
+    const existing = cart.find(item => item.product_id === product.id)
+    if (existing) {
+      if (existing.quantity < Number(product.quantity)) {
+        setCart(cart.map(item => item.product_id === product.id ? { ...item, quantity: item.quantity + 1 } : item))
+      } else {
+        setToast({ type: 'warning', message: t('products.maxStock') })
+        return
+      }
+    } else {
+      setCart([...cart, { product_id: product.id, quantity: 1, product }])
+    }
+
+    setShowCartModal(true)
+    setToast({ type: 'success', message: t('products.addedToCart', { name: productName(product) }) })
+  }
+
+  const handleCheckout = async () => {
+    if (!user?.is_verified) {
+      setToast({ type: 'error', message: t('cart.verifiedRequired') })
+      return
+    }
+    if (cart.length === 0) return
+
     try {
+      if (fulfillmentType === 'delivery' && !deliveryAddress.trim()) {
+        setToast({ type: 'error', message: t('cart.deliveryRequired') })
+        return
+      }
+
       await api.post('/orders', {
-        items: [{ product_id: product.id, quantity: 1 }],
-        fulfillment_type: 'pickup',
-        delivery_address: null,
+        items: cart.map(item => ({ product_id: item.product_id, quantity: item.quantity })),
+        fulfillment_type: fulfillmentType,
+        delivery_address: fulfillmentType === 'delivery' ? deliveryAddress.trim() : null,
       })
       setToast({ type: 'success', message: t('cart.orderSuccess') })
+      setCart([])
+      setShowCartModal(false)
+      setTimeout(() => navigate('/member/orders'), 1500)
     } catch (err) {
       setToast({ type: 'error', message: err.response?.data?.error || err.response?.data?.message || t('cart.orderFailed') })
     }
@@ -70,9 +108,10 @@ export default function ProductDetail() {
 
   const effectivePrice = Number(product.effective_price ?? product.discount_price ?? product.price)
   const hasDiscount = product.discount_price && Number(product.discount_price) < Number(product.price)
+  const cartTotal = cart.reduce((sum, item) => sum + (Number(item.product.effective_price ?? item.product.discount_price ?? item.product.price) * item.quantity), 0)
 
   return (
-    <AppLayout>
+    <AppLayout cartCount={cart.length} onCartClick={() => setShowCartModal(true)}>
       <div className="mb-4">
         <Button as={Link} to="/member/products" variant="secondary">
           <ArrowLeft size={16} />
@@ -102,9 +141,9 @@ export default function ProductDetail() {
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <Button onClick={orderSingleProduct} disabled={!user?.is_verified || Number(product.quantity) <= 0} className="py-3">
+              <Button onClick={handleAddToCart} disabled={!user?.is_verified || Number(product.quantity) <= 0} className="py-3">
                 <ShoppingCart size={18} />
-                {Number(product.quantity) <= 0 ? t('products.unavailable') : user?.is_verified ? t('products.orderOne') : t('products.verifyToBuy')}
+                {Number(product.quantity) <= 0 ? t('products.unavailable') : user?.is_verified ? t('products.addToCart') : t('products.verifyToBuy')}
               </Button>
               <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700">
                 <Truck size={18} className="text-amber-700" />
@@ -121,6 +160,19 @@ export default function ProductDetail() {
         </div>
       </section>
 
+      <CartDrawer
+        open={showCartModal}
+        cart={cart}
+        cartTotal={cartTotal}
+        onClose={() => setShowCartModal(false)}
+        onRemove={(productId) => setCart(cart.filter(item => item.product_id !== productId))}
+        onCheckout={handleCheckout}
+        onUpdateQuantity={(productId, quantity) => setCart(cart.map(item => item.product_id === productId ? { ...item, quantity } : item))}
+        fulfillmentType={fulfillmentType}
+        deliveryAddress={deliveryAddress}
+        onFulfillmentChange={setFulfillmentType}
+        onDeliveryAddressChange={setDeliveryAddress}
+      />
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
     </AppLayout>
   )
