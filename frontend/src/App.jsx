@@ -1,6 +1,6 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate, useNavigationType } from 'react-router-dom'
 import { AuthProvider, AuthContext } from './context/AuthContext'
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { useTelegram } from './hooks/useTelegram'
 import api from './services/api'
 
@@ -80,43 +80,119 @@ function TelegramBackButtonHandler() {
   const { webApp, isTelegramApp } = useTelegram()
   const location = useLocation()
   const navigate = useNavigate()
+  const navigationType = useNavigationType()
+  const stackRef = useRef([])
+  const suppressNextPushRef = useRef(false)
+  const seededDirectEntryRef = useRef(false)
+
+  const currentPath = `${location.pathname}${location.search}${location.hash}`
+  const rootPaths = new Set([
+    '/',
+    '/dashboard',
+    '/member/dashboard',
+    '/manager/dashboard',
+    '/admin/dashboard',
+  ])
+  const isTelegramLogin = isTelegramApp && location.pathname === '/login'
+
+  const canGoBackInApp = isTelegramLogin || stackRef.current.length > 1 || !rootPaths.has(location.pathname)
 
   useEffect(() => {
-    const backButton = webApp?.BackButton
-    if (!isTelegramApp || !backButton) return undefined
+    const stack = stackRef.current
 
-    const rootPaths = new Set([
-      '/',
-      '/dashboard',
-      '/login',
-      '/member/dashboard',
-      '/manager/dashboard',
-      '/admin/dashboard',
-    ])
-
-    const handleBack = () => {
-      if (window.history.length > 1 && location.key !== 'default') {
-        navigate(-1)
-        return
+    if (suppressNextPushRef.current) {
+      suppressNextPushRef.current = false
+      if (stack[stack.length - 1] !== currentPath) {
+        stack.push(currentPath)
       }
-
-      navigate(fallbackBackPath(location.pathname, user), { replace: true })
+      return
     }
 
-    if (rootPaths.has(location.pathname)) {
-      backButton.hide()
+    if (navigationType === 'POP') {
+      const existingIndex = stack.lastIndexOf(currentPath)
+      if (existingIndex >= 0) {
+        stack.splice(existingIndex + 1)
+      } else if (stack[stack.length - 1] !== currentPath) {
+        stack.push(currentPath)
+      }
+      return
+    }
+
+    if (navigationType === 'REPLACE' && stack.length > 0) {
+      stack[stack.length - 1] = currentPath
+      return
+    }
+
+    if (stack[stack.length - 1] !== currentPath) {
+      stack.push(currentPath)
+    }
+  }, [currentPath, navigationType])
+
+  useEffect(() => {
+    if (!isTelegramApp || seededDirectEntryRef.current || rootPaths.has(location.pathname)) return
+    if (window.history.length > 1) return
+
+    const fallback = fallbackBackPath(location.pathname, user)
+    seededDirectEntryRef.current = true
+    window.history.replaceState({ shemachochFallback: fallback }, '', fallback)
+    window.history.pushState({ shemachochCurrent: currentPath }, '', currentPath)
+  }, [currentPath, isTelegramApp, location.pathname, rootPaths, user])
+
+  const goBackInApp = () => {
+    if (isTelegramLogin) {
+      webApp?.close?.()
+      return
+    }
+
+    const stack = stackRef.current
+
+    if (stack.length > 1) {
+      stack.pop()
+      const previousPath = stack.pop()
+      suppressNextPushRef.current = true
+      navigate(previousPath || fallbackBackPath(location.pathname, user), { replace: true })
+      return
+    }
+
+    navigate(fallbackBackPath(location.pathname, user), { replace: true })
+  }
+
+  useEffect(() => {
+    if (!isTelegramLogin || !webApp) return undefined
+
+    window.history.pushState({ shemachochTelegramLoginExit: true }, '', currentPath)
+
+    const handlePhoneBack = () => {
+      webApp.close?.()
+    }
+
+    window.addEventListener('popstate', handlePhoneBack)
+
+    return () => {
+      window.removeEventListener('popstate', handlePhoneBack)
+    }
+  }, [currentPath, isTelegramLogin, webApp])
+
+  useEffect(() => {
+    if (!isTelegramApp || !webApp) return undefined
+
+    const backButton = webApp.BackButton
+    const handleBack = () => goBackInApp()
+
+    if (!canGoBackInApp) {
+      backButton?.hide?.()
       return undefined
     }
 
-    backButton.onClick(handleBack)
-    backButton.show()
+    backButton?.onClick?.(handleBack)
+    webApp.onEvent?.('backButtonClicked', handleBack)
+    backButton?.show?.()
 
     return () => {
-      if (backButton.offClick) {
-        backButton.offClick(handleBack)
-      }
+      backButton?.offClick?.(handleBack)
+      webApp.offEvent?.('backButtonClicked', handleBack)
     }
-  }, [isTelegramApp, location.key, location.pathname, navigate, user, webApp])
+  }, [canGoBackInApp, currentPath, isTelegramApp, location.pathname, user, webApp])
 
   return null
 }
