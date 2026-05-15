@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { AuthProvider, AuthContext } from './context/AuthContext'
 import { useContext, useEffect, useState } from 'react'
 import { useTelegram } from './hooks/useTelegram'
@@ -59,9 +59,70 @@ function RoleBasedDashboard() {
   return <Navigate to="/member/dashboard" replace />
 }
 
+function dashboardPathForRole(role) {
+  if (role === 'admin') return '/admin/dashboard'
+  if (role === 'manager') return '/manager/dashboard'
+  return '/member/dashboard'
+}
+
+function fallbackBackPath(pathname, user) {
+  if (pathname.startsWith('/member/products/')) return '/member/products'
+  if (pathname.startsWith('/member/orders/')) return '/member/orders'
+  if (pathname.startsWith('/manager/') && pathname !== '/manager/dashboard') return '/manager/dashboard'
+  if (pathname.startsWith('/admin/') && pathname !== '/admin/dashboard') return '/admin/dashboard'
+  if (pathname === '/forgot-password' || pathname === '/reset-password' || pathname === '/register') return '/login'
+  if (pathname === '/profile' || pathname === '/messages') return dashboardPathForRole(user?.role)
+  return '/dashboard'
+}
+
+function TelegramBackButtonHandler() {
+  const { user } = useContext(AuthContext)
+  const { webApp, isTelegramApp } = useTelegram()
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const backButton = webApp?.BackButton
+    if (!isTelegramApp || !backButton) return undefined
+
+    const rootPaths = new Set([
+      '/',
+      '/dashboard',
+      '/login',
+      '/member/dashboard',
+      '/manager/dashboard',
+      '/admin/dashboard',
+    ])
+
+    const handleBack = () => {
+      if (window.history.length > 1 && location.key !== 'default') {
+        navigate(-1)
+        return
+      }
+
+      navigate(fallbackBackPath(location.pathname, user), { replace: true })
+    }
+
+    if (rootPaths.has(location.pathname)) {
+      backButton.hide()
+      return undefined
+    }
+
+    backButton.onClick(handleBack)
+    backButton.show()
+
+    return () => {
+      if (backButton.offClick) {
+        backButton.offClick(handleBack)
+      }
+    }
+  }, [isTelegramApp, location.key, location.pathname, navigate, user, webApp])
+
+  return null
+}
+
 function AppRoutes() {
   const { user } = useContext(AuthContext)
-  const { isTelegramApp  } = useTelegram()
 
   useEffect(() => {
     if (user?.telegram_id) {
@@ -71,161 +132,164 @@ function AppRoutes() {
   }, [user])
 
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/auth/google/callback" element={<GoogleCallback />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
+    <>
+      <TelegramBackButtonHandler />
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/auth/google/callback" element={<GoogleCallback />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* Dashboard router - redirects based on role */}
-      <Route path="/dashboard" element={<RoleBasedDashboard />} />
+        {/* Dashboard router - redirects based on role */}
+        <Route path="/dashboard" element={<RoleBasedDashboard />} />
 
-      {/* Member Routes */}
-      <Route
-        path="/member/dashboard"
-        element={
-          <ProtectedRoute requiredRole="member">
-            <MemberDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/member/products"
-        element={
-          <ProtectedRoute requiredRole="member">
-            <MemberProducts />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/member/products/:id"
-        element={
-          <ProtectedRoute requiredRole="member">
-            <ProductDetail />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/member/orders"
-        element={
-          <ProtectedRoute requiredRole="member">
-            <MemberOrders />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/member/orders/:id"
-        element={
-          <ProtectedRoute requiredRole="member">
-            <OrderDetail />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/messages"
-        element={
-          <ProtectedRoute>
-            <Messages />
-          </ProtectedRoute>
-        }
-      />
+        {/* Member Routes */}
+        <Route
+          path="/member/dashboard"
+          element={
+            <ProtectedRoute requiredRole="member">
+              <MemberDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/member/products"
+          element={
+            <ProtectedRoute requiredRole="member">
+              <MemberProducts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/member/products/:id"
+          element={
+            <ProtectedRoute requiredRole="member">
+              <ProductDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/member/orders"
+          element={
+            <ProtectedRoute requiredRole="member">
+              <MemberOrders />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/member/orders/:id"
+          element={
+            <ProtectedRoute requiredRole="member">
+              <OrderDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <Messages />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Manager Routes */}
-      <Route
-        path="/manager/dashboard"
-        element={
-          <ProtectedRoute requiredRole="manager">
-            <ManagerDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/products"
-        element={
-          <ProtectedRoute requiredRole="manager">
-            <ProductManagement />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/orders"
-        element={
-          <ProtectedRoute requiredRole="manager">
-            <OrderManagement />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/inventory"
-        element={
-          <ProtectedRoute requiredRole="manager">
-            <InventoryManagement />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/suppliers"
-        element={
-          <ProtectedRoute requiredRole="manager">
-            <SupplierManagement />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/suppliers"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <SupplierManagement />
-          </ProtectedRoute>
-        }
-      />
+        {/* Manager Routes */}
+        <Route
+          path="/manager/dashboard"
+          element={
+            <ProtectedRoute requiredRole="manager">
+              <ManagerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manager/products"
+          element={
+            <ProtectedRoute requiredRole="manager">
+              <ProductManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manager/orders"
+          element={
+            <ProtectedRoute requiredRole="manager">
+              <OrderManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manager/inventory"
+          element={
+            <ProtectedRoute requiredRole="manager">
+              <InventoryManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manager/suppliers"
+          element={
+            <ProtectedRoute requiredRole="manager">
+              <SupplierManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/suppliers"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <SupplierManagement />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Admin Routes */}
-      <Route
-        path="/admin/dashboard"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/users"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <UserManagement />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/reports"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <Reports />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/notifications"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <AdminNotifications />
-          </ProtectedRoute>
-        }
-      />
+        {/* Admin Routes */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <UserManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/reports"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <Reports />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/notifications"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminNotifications />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </>
   )
 }
 

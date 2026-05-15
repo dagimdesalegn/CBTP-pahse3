@@ -13,11 +13,6 @@ export function useTelegram() {
       setWebApp(app)
       setUser(app.initDataUnsafe?.user)
 
-      // Enable back button if available
-      if (app.BackButton) {
-        app.BackButton.show()
-      }
-
       setIsLoading(false)
     } else {
       setIsLoading(false)
