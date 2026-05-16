@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Notification;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
@@ -95,11 +96,7 @@ class NotificationController extends Controller
         $users = \App\Models\User::where('role', 'member')->get();
 
         foreach ($users as $user) {
-            Notification::create([
-                'user_id' => $user->id,
-                'title' => $validated['title'],
-                'message' => $validated['message'],
-            ]);
+            NotificationService::notifyUser($user, $validated['title'], $validated['message']);
         }
 
         return response()->json([

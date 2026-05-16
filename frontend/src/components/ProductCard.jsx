@@ -4,7 +4,7 @@ import { Button, ProductImage, StockBadge } from './ui'
 import { formatBirr } from '../utils/currency'
 import { useLanguage } from '../context/LanguageContext'
 
-export default function ProductCard({ product, onAddToCart, disabledReason, cartQuantity = 0 }) {
+export default function ProductCard({ product, onAddToCart, onRemoveFromCart, disabledReason, cartQuantity = 0 }) {
   const { t, productName, productDescription, categoryLabel } = useLanguage()
   const isDisabled = product.quantity === 0 || Boolean(disabledReason)
   const isAdded = cartQuantity > 0
@@ -40,7 +40,7 @@ export default function ProductCard({ product, onAddToCart, disabledReason, cart
           <p className="text-right text-[10px] font-semibold leading-tight text-slate-500 sm:text-xs">{product.quantity} {t('products.available')}</p>
         </div>
         <Button
-          onClick={() => onAddToCart(product)}
+          onClick={() => isAdded ? onRemoveFromCart?.(product) : onAddToCart(product)}
           disabled={isDisabled}
           title={disabledReason || undefined}
           variant={isAdded ? 'secondary' : 'primary'}

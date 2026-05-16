@@ -78,6 +78,11 @@ export default function MemberDashboard() {
     setToast({ type: 'success', message: t('products.addedToCart', { name: productName(product) }) })
   }
 
+  const handleRemoveFromCart = (product) => {
+    setCart(cart.filter(item => item.product_id !== product.id))
+    setToast({ type: 'success', message: t('products.removedFromCart', { name: productName(product) }) })
+  }
+
   const handleCheckout = async () => {
     if (!user?.is_verified) {
       setToast({ type: 'error', message: t('cart.verifiedRequired') })
@@ -172,6 +177,7 @@ export default function MemberDashboard() {
                 key={product.id}
                 product={product}
                 onAddToCart={handleAddToCart}
+                onRemoveFromCart={handleRemoveFromCart}
                 cartQuantity={cart.find(item => item.product_id === product.id)?.quantity || 0}
                 disabledReason={!user?.is_verified ? t('products.verifyBeforeBuying') : ''}
               />

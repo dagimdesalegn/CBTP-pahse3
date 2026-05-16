@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
-use App\Models\Notification;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use App\Services\NotificationService;
@@ -146,11 +145,11 @@ class OrderController extends Controller
        NotificationService::notifyNewOrder($order);
        
        // Also notify member their order was placed
-       Notification::create([
-           'user_id' => $user->id,
-           'title' => '✅ Order Placed',
-           'message' => 'Your order #' . $order->id . ' has been placed successfully',
-       ]);
+       NotificationService::notifyUser(
+           $user,
+           '✅ Order Placed',
+           'Your order #' . $order->id . ' has been placed successfully'
+       );
 
         return response()->json([
             'message' => 'Order created successfully',

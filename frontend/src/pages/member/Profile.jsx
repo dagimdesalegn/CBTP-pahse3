@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { CreditCard, Shield, Mail, Phone } from 'lucide-react'
 import api from '../../services/api'
 import Toast from '../../components/Toast'
-import { SectionCard, StatCard } from '../../components/ui'
+import { Button, SectionCard, StatCard } from '../../components/ui'
 import { formatBirr } from '../../utils/currency'
 import { getCitySuggestions, getKebeleSuggestions, getRegionSuggestions, getWoredaSuggestions } from '../../data/ethiopiaLocations'
 
@@ -23,14 +23,21 @@ export default function Profile() {
   })
   const [selectedFileName, setSelectedFileName] = useState('')
   const [selectedCouponFileName, setSelectedCouponFileName] = useState('')
+  const [showVerificationForm, setShowVerificationForm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
   const [deletingAccount, setDeletingAccount] = useState(false)
   const [toast, setToast] = useState(null)
   const [wallet, setWallet] = useState(null)
-  const kebeleDisplay = user?.kebele_id?.startsWith('PENDING-') || user?.kebele_id?.startsWith('GOOGLE-')
+  const kebeleIdDisplay = user?.kebele_id?.startsWith('PENDING-') || user?.kebele_id?.startsWith('GOOGLE-')
     ? 'Not provided'
     : user?.kebele_id
+  const kebeleDisplay = user?.verification_kebele || user?.manager_kebele || kebeleIdDisplay || 'Not provided'
+  const addressDisplay = [
+    user?.verification_region,
+    user?.verification_city,
+    user?.verification_woreda_subcity,
+  ].filter(Boolean).join(' / ')
   const verificationStatusLabel = user?.is_verified
     ? 'Verified'
     : user?.verification_submitted_at ? 'Pending Verification' : 'Verification Required'
@@ -68,6 +75,22 @@ export default function Profile() {
   useEffect(() => {
     api.get('/wallet').then(res => setWallet(res.data)).catch(() => {})
   }, [])
+
+  const openVerificationForm = () => {
+    setVerificationData(prev => ({
+      ...prev,
+      verification_region: user?.verification_region || '',
+      verification_city: user?.verification_city || '',
+      verification_woreda_subcity: user?.verification_woreda_subcity || '',
+      verification_kebele: user?.verification_kebele || '',
+      phone: user?.phone || '',
+      kebele_id_image: null,
+      coupon_id_image: null,
+    }))
+    setSelectedFileName('')
+    setSelectedCouponFileName('')
+    setShowVerificationForm(true)
+  }
 
   const handleVerificationChange = (e) => {
     const { name, value, files } = e.target
@@ -147,6 +170,7 @@ export default function Profile() {
 
       updateUser(response.data.user)
       setToast({ type: 'success', message: 'Verification submitted. Please wait for admin approval.' })
+      setShowVerificationForm(false)
       setVerificationData({
         verification_region: '',
         verification_city: '',
@@ -191,6 +215,9 @@ export default function Profile() {
     }
   }
 
+  const shouldShowVerificationForm = user?.role === 'member' && (!user?.verification_submitted_at || showVerificationForm)
+  const canUpdateVerification = user?.role === 'member' && user?.verification_submitted_at && !showVerificationForm
+
   return (
     <>
       <AppLayout maxWidth="max-w-2xl">
@@ -223,9 +250,10 @@ export default function Profile() {
                   <div className="border-b pb-4">
                     <div className="flex items-center gap-3 mb-2">
                       <Shield size={20} className="text-primary" />
-                      <label className="text-sm font-semibold text-gray-700">Kebele ID</label>
+                      <label className="text-sm font-semibold text-gray-700">Kebele</label>
                     </div>
                     <p className="text-gray-900 ml-8">{kebeleDisplay}</p>
+                    {addressDisplay && <p className="ml-8 mt-1 text-sm text-gray-500">{addressDisplay}</p>}
                   </div>
 
                   <div className="border-b pb-4">
@@ -276,28 +304,46 @@ export default function Profile() {
                 </div>
               )}
 
-              {user?.role === 'member' && !user?.is_verified && (
+              {user?.role === 'member' && (
                 <div className="mt-6 space-y-4">
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p className="text-yellow-800">
-                      {user?.verification_submitted_at
-                        ? 'Your verification request is pending admin approval.'
-                        : 'Submit your verification request to activate ordering.'}
+                  <div className={`${user?.is_verified ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'} rounded-lg border p-4`}>
+                    <p className={user?.is_verified ? 'text-green-800' : 'text-yellow-800'}>
+                      {user?.is_verified
+                        ? 'Your account is verified. You can update your verification details when your address or documents change.'
+                        : user?.verification_submitted_at
+                          ? 'Your verification request is pending admin approval. You can update and resubmit it if anything changed.'
+                          : 'Submit your verification request to activate ordering.'}
                     </p>
-                    {user?.verification_submitted_at ? (
-                      <p className="text-yellow-700 text-sm mt-2">
-                        Verification submitted. Please wait for approval.
+                    {canUpdateVerification ? (
+                      <div className="mt-4">
+                        <Button type="button" onClick={openVerificationForm} variant={user?.is_verified ? 'secondary' : 'primary'}>
+                          {user?.is_verified ? 'Update verification' : 'Update verification request'}
+                        </Button>
+                      </div>
+                    ) : showVerificationForm ? (
+                      <p className={user?.is_verified ? 'mt-2 text-sm text-green-700' : 'mt-2 text-sm text-yellow-700'}>
+                        Updating verification will send your account back for admin review.
                       </p>
-                    ) : (
+                    ) : !user?.verification_submitted_at ? (
                       <p className="text-yellow-700 text-sm mt-2">
                         Submit your address, identity document, and coupon ID image to begin verification.
                       </p>
-                    )}
+                    ) : null}
                   </div>
 
-                  {!user?.verification_submitted_at && (
+                  {shouldShowVerificationForm && (
                     <form onSubmit={handleVerificationSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-4">
-                      <h2 className="text-lg font-bold text-gray-900">Verification Request</h2>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h2 className="text-lg font-bold text-gray-900">{user?.verification_submitted_at ? 'Update Verification' : 'Verification Request'}</h2>
+                          {user?.verification_submitted_at && (
+                            <p className="mt-1 text-sm font-semibold text-slate-500">Upload the latest documents to request reverification.</p>
+                          )}
+                        </div>
+                        {showVerificationForm && (
+                          <Button type="button" variant="ghost" onClick={() => setShowVerificationForm(false)}>Cancel</Button>
+                        )}
+                      </div>
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">Region</label>

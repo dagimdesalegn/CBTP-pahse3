@@ -30,6 +30,20 @@ export default function Products() {
     fetchProducts()
   }, [search, category])
 
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get('/products?per_page=100')
+      const items = response.data.data || []
+      setCategories([...new Set(items.map(p => p.category))].filter(Boolean))
+    } catch (err) {
+      setCategories([])
+    }
+  }
+
   const fetchProducts = async () => {
     setLoading(true)
     try {
@@ -40,7 +54,6 @@ export default function Products() {
       const response = await api.get(`/products?${params}`)
       const items = response.data.data || []
       setProducts(items)
-      setCategories([...new Set(items.map(p => p.category))].filter(Boolean))
     } catch (err) {
       setToast({ type: 'error', message: t('products.fetchFailed') })
     } finally {
@@ -75,6 +88,11 @@ export default function Products() {
 
   const removeFromCart = (productId) => {
     setCart(cart.filter(item => item.product_id !== productId))
+  }
+
+  const handleRemoveFromCart = (product) => {
+    removeFromCart(product.id)
+    setToast({ type: 'success', message: t('products.removedFromCart', { name: productName(product) }) })
   }
 
   const handleCheckout = async () => {
@@ -168,6 +186,7 @@ export default function Products() {
               key={product.id}
               product={product}
               onAddToCart={handleAddToCart}
+              onRemoveFromCart={handleRemoveFromCart}
               cartQuantity={cart.find(item => item.product_id === product.id)?.quantity || 0}
               disabledReason={!user?.is_verified ? t('products.verifyBeforeBuying') : ''}
             />
