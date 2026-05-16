@@ -197,6 +197,34 @@ function TelegramBackButtonHandler() {
   return null
 }
 
+function TelegramAccountLinker() {
+  const { user, updateUser } = useContext(AuthContext)
+  const { webApp, isTelegramApp } = useTelegram()
+  const [linkingKey, setLinkingKey] = useState('')
+
+  useEffect(() => {
+    const telegramUserId = webApp?.initDataUnsafe?.user?.id
+    const initData = webApp?.initData
+
+    if (!user?.id || !isTelegramApp || !telegramUserId || !initData) return
+    if (String(user.telegram_id || '') === String(telegramUserId)) return
+
+    const key = `${user.id}:${telegramUserId}`
+    if (linkingKey === key) return
+
+    setLinkingKey(key)
+    api.post('/telegram/link-current-user', { init_data: initData })
+      .then(response => {
+        if (response.data?.user) updateUser(response.data.user)
+      })
+      .catch(error => {
+        console.warn('Telegram account auto-link failed:', error.response?.data?.error || error.message)
+      })
+  }, [isTelegramApp, linkingKey, updateUser, user, webApp])
+
+  return null
+}
+
 function AppRoutes() {
   const { user } = useContext(AuthContext)
 
@@ -210,6 +238,7 @@ function AppRoutes() {
   return (
     <>
       <TelegramBackButtonHandler />
+      <TelegramAccountLinker />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />

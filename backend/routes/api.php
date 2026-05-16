@@ -117,4 +117,5 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Telegram
     Route::post('/telegram/link', [TelegramController::class, 'linkAccount']);
+    Route::post('/telegram/link-current-user', [TelegramController::class, 'linkCurrentUser']);
 });
