@@ -57,6 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders/{id}', [OrderController::class, 'show']);
     Route::post('/orders', [OrderController::class, 'store']);
     Route::post('/payments/initialize', [PaymentController::class, 'initialize']);
+    Route::post('/payments/in-person', [PaymentController::class, 'createInPerson']);
     Route::get('/payments/order/{orderId}', [PaymentController::class, 'orderPayment']);
     Route::get('/payments/verify/{txRef}', [PaymentController::class, 'verify']);
     Route::get('/orders/{id}/payment', [PaymentController::class, 'orderPayment']);
@@ -73,6 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Orders - Manager/Admin only
     Route::middleware('role:manager,admin')->group(function () {
         Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
+        Route::put('/payments/{payment}/status', [PaymentController::class, 'updateStatus']);
     });
 
     // Inventory - Manager/Admin only

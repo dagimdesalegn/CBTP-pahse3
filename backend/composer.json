@@ -31,6 +31,7 @@
   "scripts": {
     "test": [
       "@php tests/BackendIntegrityGuardsTest.php",
+      "@php tests/CheckoutPaymentOptionsTest.php",
       "@php tests/DeleteAccountWiringTest.php",
       "@php tests/ForgotPasswordWiringTest.php",
       "@php tests/GoogleFrontendRedirectConfigTest.php",

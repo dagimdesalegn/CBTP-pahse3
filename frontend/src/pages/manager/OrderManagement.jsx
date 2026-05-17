@@ -54,6 +54,19 @@ export default function OrderManagement() {
     }
   }
 
+  const updatePaymentStatus = async (paymentId, status) => {
+    try {
+      await api.put(`/payments/${paymentId}/status`, { status })
+      setToast({ type: 'success', message: `Payment marked ${status}` })
+      if (selectedOrder?.id) {
+        await viewOrderDetails(selectedOrder.id)
+      }
+      fetchOrders()
+    } catch (err) {
+      setToast({ type: 'error', message: err.response?.data?.error || 'Failed to update payment status' })
+    }
+  }
+
   const viewOrderDetails = async (orderId) => {
     try {
       const response = await api.get(`/orders/${orderId}`)
@@ -124,7 +137,12 @@ export default function OrderManagement() {
       />
       <DataTable columns={columns} rows={orders} empty={<EmptyState title="No orders found" description="Orders matching this status will appear here." />} />
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
-      <OrderDetailModal order={selectedOrder} isOpen={isDetailModalOpen} onClose={() => { setIsDetailModalOpen(false); setSelectedOrder(null) }} />
+      <OrderDetailModal
+        order={selectedOrder}
+        isOpen={isDetailModalOpen}
+        onClose={() => { setIsDetailModalOpen(false); setSelectedOrder(null) }}
+        onPaymentStatusUpdate={updatePaymentStatus}
+      />
     </AppLayout>
   )
 }

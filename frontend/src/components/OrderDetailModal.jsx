@@ -2,7 +2,7 @@ import { Calendar, Package, User, X } from 'lucide-react'
 import StatusBadge from './StatusBadge'
 import { formatBirr } from '../utils/currency'
 
-export default function OrderDetailModal({ order, isOpen, onClose }) {
+export default function OrderDetailModal({ order, isOpen, onClose, onPaymentStatusUpdate }) {
   if (!isOpen || !order) return null
 
   const items = Array.isArray(order.orderItems)
@@ -10,6 +10,9 @@ export default function OrderDetailModal({ order, isOpen, onClose }) {
     : Array.isArray(order.order_items)
       ? order.order_items
       : []
+  const payment = order.payment
+  const paymentProvider = payment?.meta?.provider || (payment?.tx_ref?.startsWith('wallet-') ? 'wallet' : payment?.tx_ref?.startsWith('in-person-') ? 'in_person' : 'chapa')
+  const canUpdateInPersonPayment = payment?.id && paymentProvider === 'in_person' && payment.status !== 'success'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -109,9 +112,32 @@ export default function OrderDetailModal({ order, isOpen, onClose }) {
                   <span className="font-semibold text-slate-800">Delivery Address:</span> {order.delivery_address}
                 </p>
               )}
-              <p>
-                <span className="font-semibold text-slate-800">Payment:</span> {order.payment?.status || 'unpaid'}
-              </p>
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
+                <p>
+                  <span className="font-semibold text-slate-800">Payment:</span> {payment?.status || 'unpaid'}
+                </p>
+                <p>
+                  <span className="font-semibold text-slate-800">Method:</span> {paymentProvider === 'in_person' ? 'Pay in person' : paymentProvider === 'wallet' ? 'Wallet' : 'Chapa'}
+                </p>
+                {canUpdateInPersonPayment && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onPaymentStatusUpdate?.(payment.id, 'success')}
+                      className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-700"
+                    >
+                      Mark paid
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onPaymentStatusUpdate?.(payment.id, 'failed')}
+                      className="rounded-lg bg-red-600 px-3 py-2 text-sm font-bold text-white hover:bg-red-700"
+                    >
+                      Mark failed
+                    </button>
+                  </div>
+                )}
+              </div>
               <p>
                 <span className="font-semibold text-slate-800">Placed:</span> {new Date(order.created_at).toLocaleString()}
               </p>

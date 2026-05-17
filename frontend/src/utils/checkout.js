@@ -1,6 +1,6 @@
 import api from '../services/api'
 
-export async function createOrderAndStartPayment({ cart, fulfillmentType, deliveryAddress }) {
+export async function createOrder({ cart, fulfillmentType, deliveryAddress }) {
   const orderResponse = await api.post('/orders', {
     items: cart.map(item => ({ product_id: item.product_id, quantity: item.quantity })),
     fulfillment_type: fulfillmentType,
@@ -13,6 +13,22 @@ export async function createOrderAndStartPayment({ cart, fulfillmentType, delive
     throw new Error('Order was created but the order ID was not returned.')
   }
 
+  return order
+}
+
+export async function checkoutWithPaymentMethod({ cart, fulfillmentType, deliveryAddress, paymentMethod }) {
+  const order = await createOrder({ cart, fulfillmentType, deliveryAddress })
+
+  if (paymentMethod === 'wallet') {
+    const paymentResponse = await api.post('/wallet/pay-order', { order_id: order.id })
+    return { order, payment: paymentResponse.data.payment, action: 'paid' }
+  }
+
+  if (paymentMethod === 'in_person') {
+    const paymentResponse = await api.post('/payments/in-person', { order_id: order.id })
+    return { order, payment: paymentResponse.data.payment, action: 'pending' }
+  }
+
   const paymentResponse = await api.post('/payments/initialize', { order_id: order.id })
   const checkoutUrl = paymentResponse.data.checkout_url
 
@@ -20,7 +36,11 @@ export async function createOrderAndStartPayment({ cart, fulfillmentType, delive
     throw new Error(paymentResponse.data.message || 'Payment checkout link was not returned.')
   }
 
-  return { order, checkoutUrl }
+  return { order, checkoutUrl, action: 'redirect' }
+}
+
+export async function createOrderAndStartPayment(options) {
+  return checkoutWithPaymentMethod({ ...options, paymentMethod: 'chapa' })
 }
 
 export function checkoutErrorMessage(error, fallback) {

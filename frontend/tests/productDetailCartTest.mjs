@@ -9,7 +9,7 @@ const expectations = [
   ['const handleAddToCart =', 'Product detail should add product to cart instead of ordering immediately.'],
   ['<AppLayout cartCount={cart.length} onCartClick={() => setShowCartModal(true)}>', 'Product detail should show the top cart button.'],
   ['<CartDrawer', 'Product detail should render CartDrawer.'],
-  ['createOrderAndStartPayment({ cart, fulfillmentType, deliveryAddress })', 'Product detail checkout should submit cart items.'],
+  ['checkoutWithPaymentMethod({ cart, fulfillmentType, deliveryAddress, paymentMethod })', 'Product detail checkout should submit cart items with a payment method.'],
   ["t('products.addToCart')", 'Product detail button should say Add to Cart.'],
 ]
 

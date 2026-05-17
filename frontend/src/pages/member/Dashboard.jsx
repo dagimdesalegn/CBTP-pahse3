@@ -12,7 +12,7 @@ import api from '../../services/api'
 import { useAuth } from '../../hooks/useAuth'
 import { useLanguage } from '../../context/LanguageContext'
 import { useCart } from '../../context/CartContext'
-import { checkoutErrorMessage, createOrderAndStartPayment } from '../../utils/checkout'
+import { checkoutErrorMessage, checkoutWithPaymentMethod } from '../../utils/checkout'
 
 export default function MemberDashboard() {
   const { user } = useAuth()
@@ -24,6 +24,7 @@ export default function MemberDashboard() {
   const [showCartModal, setShowCartModal] = useState(false)
   const [fulfillmentType, setFulfillmentType] = useState('pickup')
   const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState('chapa')
   const { t, productName } = useLanguage()
   const { cart, setCart, cartTotal, removeFromCart, updateCartQuantity, clearCart } = useCart()
 
@@ -100,10 +101,17 @@ export default function MemberDashboard() {
         return
       }
 
-      const { checkoutUrl } = await createOrderAndStartPayment({ cart, fulfillmentType, deliveryAddress })
+      const { checkoutUrl, action } = await checkoutWithPaymentMethod({ cart, fulfillmentType, deliveryAddress, paymentMethod })
       clearCart()
       setShowCartModal(false)
-      window.location.href = checkoutUrl
+      if (action === 'redirect') {
+        window.location.href = checkoutUrl
+        return
+      }
+      setToast({
+        type: 'success',
+        message: paymentMethod === 'wallet' ? 'Order paid with wallet.' : 'Order placed. Please pay in person during pickup or delivery.',
+      })
     } catch (err) {
       setToast({ type: 'error', message: checkoutErrorMessage(err, t('cart.orderFailed')) })
     }
@@ -200,6 +208,9 @@ export default function MemberDashboard() {
         deliveryAddress={deliveryAddress}
         onFulfillmentChange={setFulfillmentType}
         onDeliveryAddressChange={setDeliveryAddress}
+        paymentMethod={paymentMethod}
+        onPaymentMethodChange={setPaymentMethod}
+        walletBalance={user?.account_balance || 0}
       />
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
     </AppLayout>

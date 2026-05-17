@@ -4,7 +4,7 @@ import { Button, EmptyState, ProductImage } from './ui'
 import { formatBirr } from '../utils/currency'
 import { useLanguage } from '../context/LanguageContext'
 
-export default function CartDrawer({ open, cart, cartTotal, onClose, onRemove, onCheckout, onUpdateQuantity, fulfillmentType = 'pickup', deliveryAddress = '', onFulfillmentChange, onDeliveryAddressChange }) {
+export default function CartDrawer({ open, cart, cartTotal, onClose, onRemove, onCheckout, onUpdateQuantity, fulfillmentType = 'pickup', deliveryAddress = '', onFulfillmentChange, onDeliveryAddressChange, paymentMethod = 'chapa', onPaymentMethodChange, walletBalance = 0 }) {
   const { t, productName } = useLanguage()
   const drawerRef = useRef(null)
 
@@ -109,13 +109,43 @@ export default function CartDrawer({ open, cart, cartTotal, onClose, onRemove, o
                     <input value={deliveryAddress} onChange={(e) => onDeliveryAddressChange?.(e.target.value)} placeholder={t('cart.deliveryPlaceholder')} className="ui-input" />
                   </label>
                 )}
+                <div>
+                  <span className="ui-label">Payment method</span>
+                  <div className="grid gap-2">
+                    {[
+                      { value: 'wallet', title: 'Pay with wallet', description: `Use your wallet balance (${formatBirr(walletBalance)})` },
+                      { value: 'chapa', title: 'Pay with Chapa', description: 'Pay online with Chapa checkout' },
+                      { value: 'in_person', title: 'Pay in person', description: 'Pay cash during pickup or delivery' },
+                    ].map(option => (
+                      <label
+                        key={option.value}
+                        className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition ${
+                          paymentMethod === option.value ? 'border-amber-400 bg-amber-50' : 'border-slate-200 bg-white hover:bg-slate-50'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="payment_method"
+                          value={option.value}
+                          checked={paymentMethod === option.value}
+                          onChange={() => onPaymentMethodChange?.(option.value)}
+                          className="mt-1"
+                        />
+                        <span>
+                          <span className="block text-sm font-black text-slate-950">{option.title}</span>
+                          <span className="block text-xs font-semibold leading-5 text-slate-600">{option.description}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
               </div>
               <div className="mb-4 flex items-center justify-between">
                 <span className="font-bold text-slate-700">{t('cart.subtotal')}</span>
                 <span className="text-2xl font-black text-slate-950">{formatBirr(cartTotal)}</span>
               </div>
               <Button onClick={onCheckout} className="w-full">
-                {t('cart.placeOrder')}
+                {paymentMethod === 'chapa' ? 'Continue to payment' : t('cart.placeOrder')}
               </Button>
             </div>
           </>

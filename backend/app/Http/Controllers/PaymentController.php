@@ -139,6 +139,83 @@ class PaymentController extends Controller
         return response()->json(['message' => 'Payment verified']);
     }
 
+    public function createInPerson(Request $request)
+    {
+        $validated = $request->validate([
+            'order_id' => 'required|integer|exists:orders,id',
+        ]);
+
+        $order = Order::with('orderItems.product')->findOrFail($validated['order_id']);
+        $this->ensureOrderPaymentVisibleToUser($order, $request->user());
+
+        if ($order->status === Order::STATUS_CANCELLED) {
+            return response()->json(['error' => 'Cancelled orders cannot be paid'], 409);
+        }
+
+        $existingSuccess = Payment::where('order_id', $order->id)
+            ->where('status', 'success')
+            ->first();
+
+        if ($existingSuccess) {
+            return response()->json([
+                'message' => 'Order already paid',
+                'payment' => $existingSuccess,
+            ], 409);
+        }
+
+        $payment = Payment::where('order_id', $order->id)
+            ->where('status', 'pending')
+            ->where('tx_ref', 'like', 'in-person-' . $order->id . '-%')
+            ->first();
+
+        if (!$payment) {
+            $payment = Payment::create([
+                'order_id' => $order->id,
+                'user_id' => $order->user_id,
+                'tx_ref' => 'in-person-' . $order->id . '-' . Str::uuid(),
+                'amount' => $order->total_price,
+                'currency' => 'ETB',
+                'status' => 'pending',
+                'meta' => [
+                    'provider' => 'in_person',
+                    'note' => 'Member will pay in person during pickup or delivery.',
+                ],
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'In-person payment selected. Please pay during pickup or delivery.',
+            'payment' => $payment,
+        ]);
+    }
+
+    public function updateStatus(Request $request, Payment $payment)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,success,failed,cancelled',
+        ]);
+
+        $payment->load('order.orderItems.product');
+        $this->ensureOrderPaymentVisibleToUser($payment->order, $request->user());
+
+        if (($payment->meta['provider'] ?? null) !== 'in_person') {
+            return response()->json(['error' => 'Only in-person payments can be updated manually'], 422);
+        }
+
+        $payment->update([
+            'status' => $validated['status'],
+            'meta' => array_merge($payment->meta ?? [], [
+                'updated_by' => $request->user()->id,
+                'updated_manually_at' => now()->toIso8601String(),
+            ]),
+        ]);
+
+        return response()->json([
+            'message' => 'Payment status updated',
+            'payment' => $payment->fresh(),
+        ]);
+    }
+
     public function verify(Request $request, $txRef, ChapaService $chapa)
     {
         $payment = Payment::where('tx_ref', $txRef)->first();
