@@ -27,8 +27,8 @@ Route::get('/auth/google/callback', [AuthController::class, 'googleCallback']);
 // Telegram webhook
 Route::post('/telegram/webhook', [TelegramController::class, 'webhook']);
 
-// Payment callback (Chapa)
-Route::post('/payments/callback', [PaymentController::class, 'callback']);
+// Payment callback (Chapa sends GET query params after checkout; keep POST for webhook-style callbacks)
+Route::match(['get', 'post'], '/payments/callback', [PaymentController::class, 'callback']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {

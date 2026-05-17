@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import AppLayout from '../../components/AppLayout'
 import StatusBadge from '../../components/StatusBadge'
 import LoadingSpinner from '../../components/LoadingSpinner'
@@ -17,15 +17,27 @@ const statusSteps = [
 
 export default function OrderDetail() {
   const { id } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [order, setOrder] = useState(null)
   const [payment, setPayment] = useState(null)
   const [loading, setLoading] = useState(true)
   const [paying, setPaying] = useState(false)
+  const [returnVerified, setReturnVerified] = useState(false)
   const [toast, setToast] = useState(null)
 
   useEffect(() => {
     fetchOrder()
   }, [id])
+
+  useEffect(() => {
+    const txRef = searchParams.get('tx_ref') || searchParams.get('trx_ref')
+
+    if (!txRef || returnVerified) {
+      return
+    }
+
+    verifyReturnedPayment(txRef)
+  }, [searchParams, returnVerified])
 
   const fetchOrder = async () => {
     try {
@@ -64,6 +76,27 @@ export default function OrderDetail() {
       setToast({ type: 'error', message: getPaymentErrorMessage(err) })
     } finally {
       setPaying(false)
+    }
+  }
+
+  const verifyReturnedPayment = async (txRef) => {
+    setReturnVerified(true)
+    try {
+      const response = await api.get(`/payments/verify/${encodeURIComponent(txRef)}`)
+      setPayment(response.data.payment)
+      setToast({
+        type: response.data.payment?.status === 'success' ? 'success' : 'warning',
+        message: response.data.payment?.status === 'success'
+          ? 'Payment verified successfully'
+          : `Payment status: ${response.data.payment?.status || 'pending'}`,
+      })
+      fetchOrder()
+    } catch (err) {
+      setToast({ type: 'error', message: getPaymentErrorMessage(err) || 'Unable to verify payment' })
+    } finally {
+      searchParams.delete('tx_ref')
+      searchParams.delete('trx_ref')
+      setSearchParams(searchParams, { replace: true })
     }
   }
 

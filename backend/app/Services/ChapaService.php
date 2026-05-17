@@ -51,14 +51,16 @@ class ChapaService
         return $this->requestBaseUrl($request) . '/api/payments/callback';
     }
 
-    public function returnUrl(int $orderId, ?Request $request = null)
+    public function returnUrl(int $orderId, ?Request $request = null, ?string $txRef = null)
     {
         $configuredUrl = (string) config('services.chapa.return_url');
         $base = $this->isPublicUrl($configuredUrl)
             ? rtrim($configuredUrl, '/')
             : $this->requestBaseUrl($request);
 
-        return $base . '/member/orders/' . $orderId;
+        $url = $base . '/member/orders/' . $orderId;
+
+        return $txRef ? $url . '?tx_ref=' . urlencode($txRef) : $url;
     }
 
     public function currency()
