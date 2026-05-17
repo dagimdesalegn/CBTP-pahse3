@@ -8,9 +8,11 @@ import { formatBirr } from '../../utils/currency'
 import api from '../../services/api'
 import { getKebeleSuggestions } from '../../data/ethiopiaLocations'
 import { useAuth } from '../../hooks/useAuth'
+import { useLanguage } from '../../context/LanguageContext'
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth()
+  const { t } = useLanguage()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -45,7 +47,7 @@ export default function UserManagement() {
       const response = await api.get(`/users?${params}`)
       setUsers(response.data.data || [])
     } catch (err) {
-      setToast({ type: 'error', message: 'Failed to fetch users' })
+      setToast({ type: 'error', message: t('users.fetchFailed') })
     } finally {
       setLoading(false)
     }
@@ -54,10 +56,10 @@ export default function UserManagement() {
   const handleVerify = async (userId, isVerified) => {
     try {
       await api.put(`/users/${userId}/verify`, { is_verified: !isVerified })
-      setToast({ type: 'success', message: isVerified ? 'User unverified' : 'User verified' })
+      setToast({ type: 'success', message: isVerified ? t('users.unverifiedOk') : t('users.verifiedOk') })
       fetchUsers()
     } catch (err) {
-      setToast({ type: 'error', message: 'Failed to update user' })
+      setToast({ type: 'error', message: t('users.updateFailed') })
     }
   }
 
@@ -78,11 +80,11 @@ export default function UserManagement() {
         membership_status: selectedUser.membership_status || 'active',
         manager_kebele: selectedRole === 'manager' ? managerKebele.trim() : '',
       })
-      setToast({ type: 'success', message: 'Access updated' })
+      setToast({ type: 'success', message: t('users.accessUpdated') })
       setSelectedUser(prev => prev ? { ...prev, role: selectedRole, access_level: selectedRole === 'admin' ? accessLevel : prev.access_level, manager_kebele: selectedRole === 'manager' ? managerKebele.trim() : '' } : prev)
       fetchUsers()
     } catch (err) {
-      setToast({ type: 'error', message: 'Failed to update access' })
+      setToast({ type: 'error', message: t('users.accessFailed') })
     }
   }
 
@@ -93,12 +95,12 @@ export default function UserManagement() {
         amount: Number(walletAmount),
         description: walletDescription || 'Admin wallet adjustment',
       })
-      setToast({ type: 'success', message: 'Wallet updated' })
+      setToast({ type: 'success', message: t('users.walletUpdated') })
       setWalletAmount('')
       setWalletDescription('')
       fetchUsers()
     } catch (err) {
-      setToast({ type: 'error', message: err.response?.data?.message || 'Failed to adjust wallet' })
+      setToast({ type: 'error', message: err.response?.data?.message || t('users.walletFailed') })
     }
   }
 
@@ -107,7 +109,7 @@ export default function UserManagement() {
   const columns = [
     {
       key: 'name',
-      header: 'Member',
+      header: t('users.member'),
       render: user => (
         <div className="flex items-center gap-3">
           {user.avatar_url ? (
@@ -122,17 +124,17 @@ export default function UserManagement() {
         </div>
       ),
     },
-    { key: 'role', header: 'Role', render: user => <span className="capitalize">{user.role}</span> },
-    { key: 'manager_kebele', header: 'Manager Kebele', render: user => user.role === 'manager' ? (user.manager_kebele || 'Not assigned') : '-' },
+    { key: 'role', header: t('users.role'), render: user => <span className="capitalize">{user.role}</span> },
+    { key: 'manager_kebele', header: t('users.managerKebele'), render: user => user.role === 'manager' ? (user.manager_kebele || t('users.notAssigned')) : '-' },
     {
       key: 'verified',
-      header: 'Verified',
+      header: t('users.verified'),
       cellClassName: 'text-center',
       render: user => user.is_verified ? <Check className="mx-auto text-emerald-600" size={20} /> : <X className="mx-auto text-red-600" size={20} />,
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: t('users.actions'),
       render: user => (
         <div className="flex flex-wrap gap-2">
           {user.role === 'member' && (
@@ -142,12 +144,12 @@ export default function UserManagement() {
               onClick={() => handleVerify(user.id, user.is_verified)}
             >
               <ShieldCheck size={15} />
-              {user.is_verified ? 'Unverify' : 'Verify'}
+              {user.is_verified ? t('users.unverify') : t('users.verify')}
             </Button>
           )}
           <Button variant="secondary" className="px-3 py-2" onClick={() => openDetails(user)}>
             <Eye size={15} />
-            Details
+            {t('common.details')}
           </Button>
         </div>
       ),
@@ -157,20 +159,20 @@ export default function UserManagement() {
   return (
     <AppLayout>
       <PageHeader
-        eyebrow="Members"
-        title={isManagerView ? 'Member Verification' : 'User Management'}
-        description={isManagerView ? 'Review and verify members assigned to your kebele.' : 'Search members, verify accounts, and inspect submitted verification documents.'}
+        eyebrow={t('reports.members')}
+        title={isManagerView ? t('users.memberVerification') : t('users.management')}
+        description={isManagerView ? t('users.managerDesc') : t('users.adminDesc')}
       />
 
       <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <label className="relative block max-w-md">
           <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search users..." className="ui-input pl-10" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('users.searchPlaceholder')} className="ui-input pl-10" />
         </label>
       </div>
 
       {users.length === 0 ? (
-        <EmptyState title="No users found" description="Try a different search term." />
+        <EmptyState title={t('users.noUsers')} description={t('users.noUsersDesc')} />
       ) : (
         <>
           <div className="grid gap-3 md:hidden">
@@ -183,7 +185,7 @@ export default function UserManagement() {
                     <div className="mt-2 flex flex-wrap gap-2">
                       <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold capitalize text-slate-700">{user.role}</span>
                       <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${user.is_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
-                        {user.is_verified ? 'Verified' : 'Pending'}
+                        {user.is_verified ? t('users.verified') : t('users.pending')}
                       </span>
                     </div>
                   </div>
@@ -192,8 +194,8 @@ export default function UserManagement() {
                   </button>
                 </div>
                 <div className="mt-3 grid gap-2 text-sm text-slate-600">
-                  <p><span className="font-bold text-slate-900">Phone:</span> {user.phone || 'Not provided'}</p>
-                  <p><span className="font-bold text-slate-900">Kebele:</span> {user.verification_kebele || 'Not provided'}</p>
+                  <p><span className="font-bold text-slate-900">{t('users.phone')}:</span> {user.phone || t('users.notProvided')}</p>
+                  <p><span className="font-bold text-slate-900">{t('users.kebele')}:</span> {user.verification_kebele || t('users.notProvided')}</p>
                 </div>
                 {user.role === 'member' && (
                   <Button
@@ -202,14 +204,14 @@ export default function UserManagement() {
                     onClick={() => handleVerify(user.id, user.is_verified)}
                   >
                     <ShieldCheck size={15} />
-                    {user.is_verified ? 'Unverify' : 'Verify'}
+                    {user.is_verified ? t('users.unverify') : t('users.verify')}
                   </Button>
                 )}
               </div>
             ))}
           </div>
           <div className="hidden md:block">
-            <DataTable columns={columns} rows={users} empty={<EmptyState title="No users found" description="Try a different search term." />} />
+            <DataTable columns={columns} rows={users} empty={<EmptyState title={t('users.noUsers')} description={t('users.noUsersDesc')} />} />
           </div>
         </>
       )}

@@ -4,17 +4,19 @@ import LoadingSpinner from '../../components/LoadingSpinner'
 import OrderCard from '../../components/OrderCard'
 import { EmptyState, PageHeader } from '../../components/ui'
 import api from '../../services/api'
+import { useLanguage } from '../../context/LanguageContext'
 
-const filters = [
-  { value: '', label: 'All' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'approved', label: 'Approved' },
-  { value: 'ready', label: 'Ready' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'cancelled', label: 'Cancelled' },
+const filterValues = [
+  '',
+  'pending',
+  'approved',
+  'ready',
+  'completed',
+  'cancelled',
 ]
 
 export default function Orders() {
+  const { t, statusLabel } = useLanguage()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('')
@@ -40,21 +42,21 @@ export default function Orders() {
   return (
     <AppLayout>
       <PageHeader
-        eyebrow="Order center"
-        title="My Orders"
-        description="Track request review, approval, pickup readiness, and completed Shemachoch orders."
+        eyebrow={t('orders.center')}
+        title={t('orders.mine')}
+        description={t('orders.desc')}
       />
 
       <div className="mb-6 flex gap-2 overflow-x-auto rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
-        {filters.map(item => (
+        {filterValues.map(value => (
           <button
-            key={item.value}
-            onClick={() => setFilter(item.value)}
+            key={value || 'all'}
+            onClick={() => setFilter(value)}
             className={`whitespace-nowrap rounded-md px-4 py-2 text-sm font-bold transition ${
-              filter === item.value ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
+              filter === value ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
-            {item.label}
+            {value ? statusLabel(value) : t('orders.all')}
           </button>
         ))}
       </div>
@@ -62,7 +64,7 @@ export default function Orders() {
       {loading ? (
         <LoadingSpinner />
       ) : orders.length === 0 ? (
-        <EmptyState title="No orders found" description="Orders that match this status will appear here." />
+        <EmptyState title={t('orders.noFound')} description={t('orders.noFoundDesc')} />
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {orders.map(order => <OrderCard key={order.id} order={order} />)}

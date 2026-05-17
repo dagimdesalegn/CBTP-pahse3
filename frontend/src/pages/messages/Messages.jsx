@@ -4,8 +4,10 @@ import AppLayout from '../../components/AppLayout'
 import Toast from '../../components/Toast'
 import { Button, EmptyState, PageHeader, SectionCard } from '../../components/ui'
 import api from '../../services/api'
+import { useLanguage } from '../../context/LanguageContext'
 
 export default function Messages() {
+  const { t } = useLanguage()
   const [tab, setTab] = useState('inbox')
   const [messages, setMessages] = useState([])
   const [recipients, setRecipients] = useState([])
@@ -26,7 +28,7 @@ export default function Messages() {
       const response = await api.get(endpoint)
       setMessages(response.data.data || [])
     } catch (err) {
-      setToast({ type: 'error', message: 'Failed to load messages' })
+      setToast({ type: 'error', message: t('messages.loadFailed') })
     }
   }
 
@@ -35,10 +37,10 @@ export default function Messages() {
     try {
       await api.post('/messages', form)
       setForm({ recipient_id: '', subject: '', content: '' })
-      setToast({ type: 'success', message: 'Message sent' })
+      setToast({ type: 'success', message: t('messages.sentOk') })
       setTab('sent')
     } catch (err) {
-      setToast({ type: 'error', message: err.response?.data?.error || 'Failed to send message' })
+      setToast({ type: 'error', message: err.response?.data?.error || t('messages.sendFailed') })
     }
   }
 
@@ -51,32 +53,32 @@ export default function Messages() {
   return (
     <AppLayout>
       <PageHeader
-        eyebrow="Communication"
-        title="Messages"
-        description="Send and receive internal support messages between members, managers, and admins."
+        eyebrow={t('messages.communication')}
+        title={t('messages.title')}
+        description={t('messages.desc')}
       />
 
       <div className="grid gap-5 lg:grid-cols-[360px_1fr]">
-        <SectionCard title="New message">
+        <SectionCard title={t('messages.new')}>
           <form onSubmit={sendMessage} className="space-y-3">
             <select required value={form.recipient_id} onChange={e => setForm({ ...form, recipient_id: e.target.value })} className="ui-input">
-              <option value="">Select recipient</option>
+              <option value="">{t('messages.selectRecipient')}</option>
               {recipients.map(user => <option key={user.id} value={user.id}>{user.name} ({user.role})</option>)}
             </select>
-            <input value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} placeholder="Subject" className="ui-input" />
-            <textarea required value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="Write message..." className="ui-input min-h-36" />
-            <Button type="submit" className="w-full"><Send size={16} /> Send</Button>
+            <input value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} placeholder={t('messages.subject')} className="ui-input" />
+            <textarea required value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder={t('messages.write')} className="ui-input min-h-36" />
+            <Button type="submit" className="w-full"><Send size={16} /> {t('messages.send')}</Button>
           </form>
         </SectionCard>
 
         <div className="space-y-4">
           <div className="flex gap-2 rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
-            <TabButton active={tab === 'inbox'} onClick={() => setTab('inbox')} icon={Inbox}>Inbox</TabButton>
-            <TabButton active={tab === 'sent'} onClick={() => setTab('sent')} icon={Send}>Sent</TabButton>
+            <TabButton active={tab === 'inbox'} onClick={() => setTab('inbox')} icon={Inbox}>{t('messages.inbox')}</TabButton>
+            <TabButton active={tab === 'sent'} onClick={() => setTab('sent')} icon={Send}>{t('messages.sent')}</TabButton>
           </div>
 
           {messages.length === 0 ? (
-            <EmptyState title="No messages yet" description="Your internal conversation history will appear here." icon={Mail} />
+            <EmptyState title={t('messages.none')} description={t('messages.noneDesc')} icon={Mail} />
           ) : (
             <div className="space-y-3">
               {messages.map(message => {
@@ -90,8 +92,8 @@ export default function Messages() {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-sm font-black text-slate-950">{message.subject || 'No subject'}</p>
-                        <p className="mt-1 text-xs font-semibold text-slate-500">{tab === 'sent' ? 'To' : 'From'} {person?.name || 'User'} • {new Date(message.created_at).toLocaleString()}</p>
+                        <p className="text-sm font-black text-slate-950">{message.subject || t('messages.noSubject')}</p>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">{tab === 'sent' ? t('messages.to') : t('messages.from')} {person?.name || t('messages.user')} - {new Date(message.created_at).toLocaleString()}</p>
                       </div>
                       {message.is_read && tab === 'inbox' && <CheckCircle className="text-emerald-600" size={18} />}
                     </div>
