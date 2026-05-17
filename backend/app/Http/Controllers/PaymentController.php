@@ -34,11 +34,20 @@ class PaymentController extends Controller
             ->orderBy('created_at', 'desc')
             ->first();
 
-        if ($existing && in_array($existing->status, ['initialized', 'pending'])) {
-            return response()->json([
-                'message' => 'Payment already initialized',
-                'payment' => $existing,
-                'checkout_url' => $existing->checkout_url,
+        if ($existing && in_array($existing->status, ['initialized', 'pending'], true)) {
+            if ($existing->checkout_url) {
+                return response()->json([
+                    'message' => 'Payment already initialized',
+                    'payment' => $existing,
+                    'checkout_url' => $existing->checkout_url,
+                ]);
+            }
+
+            $existing->update([
+                'status' => 'failed',
+                'meta' => array_merge($existing->meta ?? [], [
+                    'local_error' => 'Missing Chapa checkout URL; reinitializing payment.',
+                ]),
             ]);
         }
 
@@ -59,8 +68,8 @@ class PaymentController extends Controller
             'first_name' => $this->firstName($order->user->name),
             'last_name' => $this->lastName($order->user->name),
             'tx_ref' => $txRef,
-            'callback_url' => $chapa->callbackUrl(),
-            'return_url' => $chapa->returnUrl($order->id),
+            'callback_url' => $chapa->callbackUrl($request),
+            'return_url' => $chapa->returnUrl($order->id, $request),
             'customization' => [
                 'title' => 'Shemachoch Payment',
                 'description' => 'Order #' . $order->id,
@@ -80,6 +89,15 @@ class PaymentController extends Controller
             ], 502);
         }
 
+        $checkoutUrl = $response['data']['checkout_url'] ?? null;
+
+        if (!$checkoutUrl) {
+            return response()->json([
+                'error' => 'Chapa did not return a checkout link',
+                'details' => $response,
+            ], 502);
+        }
+
         $payment = Payment::create([
             'order_id' => $order->id,
             'user_id' => $order->user_id,
@@ -87,7 +105,7 @@ class PaymentController extends Controller
             'amount' => $order->total_price,
             'currency' => $chapa->currency(),
             'status' => 'initialized',
-            'checkout_url' => $response['data']['checkout_url'] ?? null,
+            'checkout_url' => $checkoutUrl,
             'meta' => $response,
         ]);
 

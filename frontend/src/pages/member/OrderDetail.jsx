@@ -58,10 +58,10 @@ export default function OrderDetail() {
       if (response.data.checkout_url) {
         window.location.href = response.data.checkout_url
       } else {
-        setToast({ type: 'success', message: response.data.message || 'Payment initialized' })
+        setToast({ type: 'warning', message: response.data.message || 'Payment started, but no checkout link was returned.' })
       }
     } catch (err) {
-      setToast({ type: 'error', message: err.response?.data?.error || err.response?.data?.message || 'Payment could not be initialized' })
+      setToast({ type: 'error', message: getPaymentErrorMessage(err) })
     } finally {
       setPaying(false)
     }
@@ -265,3 +265,16 @@ function capitalize(value) {
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
+function getPaymentErrorMessage(err) {
+  const data = err.response?.data
+  const details = data?.details
+
+  if (data?.error) return data.error
+  if (data?.message) return data.message
+  if (typeof details === 'string') return details
+  if (details?.message) return details.message
+  if (details?.error) return details.error
+  if (details?.data?.message) return details.data.message
+
+  return 'Payment could not be initialized'
+}
