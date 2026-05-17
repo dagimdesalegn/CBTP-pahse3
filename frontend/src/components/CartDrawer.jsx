@@ -1,20 +1,42 @@
 import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { Button, EmptyState, ProductImage } from './ui'
 import { formatBirr } from '../utils/currency'
 import { useLanguage } from '../context/LanguageContext'
 
 export default function CartDrawer({ open, cart, cartTotal, onClose, onRemove, onCheckout, onUpdateQuantity, fulfillmentType = 'pickup', deliveryAddress = '', onFulfillmentChange, onDeliveryAddressChange }) {
   const { t, productName } = useLanguage()
+  const drawerRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return undefined
+
+    drawerRef.current?.focus()
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onClose?.()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [open, onClose])
+
   if (!open) return null
 
   return (
     <div className="fixed inset-0 z-50">
       <button className="absolute inset-0 bg-slate-950/55" onClick={onClose} aria-label={t('common.close')} />
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-white shadow-2xl">
+      <aside
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cart-drawer-title"
+        tabIndex={-1}
+        className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-white shadow-2xl focus:outline-none"
+      >
         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-900 px-5 py-4 text-white">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">{t('cart.checkout')}</p>
-            <h2 className="text-xl font-black">{t('cart.shoppingCart')}</h2>
+            <h2 id="cart-drawer-title" className="text-xl font-black">{t('cart.shoppingCart')}</h2>
           </div>
           <button onClick={onClose} className="rounded-lg p-2 hover:bg-white/10" aria-label={t('common.close')}>
             <X size={20} />

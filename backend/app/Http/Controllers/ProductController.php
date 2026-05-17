@@ -109,6 +109,10 @@ class ProductController extends Controller
         }
         $this->ensureProductInUserScope($product, $request->user());
 
+        if ($request->filled('discount_price') && !$request->has('price')) {
+            $request->merge(['price' => $product->price]);
+        }
+
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'name_am' => 'nullable|string|max:255',
@@ -117,7 +121,7 @@ class ProductController extends Controller
             'description_am' => 'nullable|string',
             'description_or' => 'nullable|string',
             'price' => 'sometimes|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0|lt:price',
             'quantity' => 'sometimes|integer|min:0',
             'category' => 'sometimes|string',
             'kebele' => 'nullable|string|max:255',

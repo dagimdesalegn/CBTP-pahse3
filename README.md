@@ -257,9 +257,11 @@ FRONTEND_URL=http://localhost:5173
 ### Frontend Configuration (`.env`)
 
 ```env
-VITE_API_URL=http://localhost:8000/api
+VITE_API_URL=/api
 VITE_TELEGRAM_BOT_USERNAME=your_bot_username
 ```
+
+Use `/api` when the frontend is served with the Vite dev proxy or from the same domain as the API. For a separate API domain, set `VITE_API_URL` to the API origin, for example `https://api.example.com`.
 
 ---
 
@@ -520,7 +522,7 @@ npm run build
 
 Set these in your hosting provider:
 ```
-VITE_API_URL=https://your-api-domain.com/api
+VITE_API_URL=https://your-api-domain.com
 DB_HOST=your_database_host
 DB_USERNAME=your_db_user
 DB_PASSWORD=your_db_password

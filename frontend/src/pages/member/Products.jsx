@@ -9,11 +9,11 @@ import { Button, EmptyState, PageHeader } from '../../components/ui'
 import api from '../../services/api'
 import { useAuth } from '../../hooks/useAuth'
 import { useLanguage } from '../../context/LanguageContext'
+import { useCart } from '../../context/CartContext'
 import { checkoutErrorMessage, createOrderAndStartPayment } from '../../utils/checkout'
 
 export default function Products() {
   const [products, setProducts] = useState([])
-  const [cart, setCart] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
@@ -24,6 +24,7 @@ export default function Products() {
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const { user } = useAuth()
   const { t, productName, categoryLabel } = useLanguage()
+  const { cart, setCart, cartTotal, removeFromCart, updateCartQuantity, clearCart } = useCart()
 
   useEffect(() => {
     fetchProducts()
@@ -81,14 +82,6 @@ export default function Products() {
     setToast({ type: 'success', message: t('products.addedToCart', { name: productName(product) }) })
   }
 
-  const updateCartQuantity = (productId, quantity) => {
-    setCart(cart.map(item => item.product_id === productId ? { ...item, quantity } : item))
-  }
-
-  const removeFromCart = (productId) => {
-    setCart(cart.filter(item => item.product_id !== productId))
-  }
-
   const handleRemoveFromCart = (product) => {
     removeFromCart(product.id)
     setToast({ type: 'success', message: t('products.removedFromCart', { name: productName(product) }) })
@@ -107,7 +100,7 @@ export default function Products() {
       }
 
       const { checkoutUrl } = await createOrderAndStartPayment({ cart, fulfillmentType, deliveryAddress })
-      setCart([])
+      clearCart()
       setShowCartModal(false)
       window.location.href = checkoutUrl
     } catch (err) {
@@ -115,7 +108,6 @@ export default function Products() {
     }
   }
 
-  const cartTotal = cart.reduce((sum, item) => sum + (Number(item.product.effective_price ?? item.product.discount_price ?? item.product.price) * item.quantity), 0)
   const featuredCategories = useMemo(() => ['All', ...categories], [categories])
 
   return (

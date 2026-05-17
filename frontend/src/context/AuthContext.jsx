@@ -3,6 +3,18 @@ import api from '../services/api'
 
 export const AuthContext = createContext()
 
+function safeStoredUser() {
+  const storedUser = localStorage.getItem('user')
+  if (!storedUser) return null
+
+  try {
+    return JSON.parse(storedUser)
+  } catch {
+    localStorage.removeItem('user')
+    return null
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -11,6 +23,12 @@ export function AuthProvider({ children }) {
   const updateUser = (userData) => {
     setUser(userData)
     localStorage.setItem('user', JSON.stringify(userData))
+  }
+
+  const clearAuth = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    setUser(null)
   }
 
   const refreshUser = async () => {
@@ -23,20 +41,21 @@ export function AuthProvider({ children }) {
       return response.data
     } catch (err) {
       if (err.response?.status === 401) {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-        setUser(null)
+        clearAuth()
       }
       return null
     }
   }
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
-    }
+    const storedUser = safeStoredUser()
+    if (storedUser) setUser(storedUser)
     refreshUser().finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener('auth:expired', clearAuth)
+    return () => window.removeEventListener('auth:expired', clearAuth)
   }, [])
 
   useEffect(() => {
@@ -95,9 +114,7 @@ export function AuthProvider({ children }) {
     } catch (err) {
       console.error('Logout error:', err)
     } finally {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      setUser(null)
+      clearAuth()
     }
   }
 

@@ -1,6 +1,8 @@
 node_modules/
 vendor/
 .env
+.env.*
+!.env.example
 .env.local
 .DS_Store
 *.log
@@ -17,5 +19,4 @@ bootstrap/cache/
 backend/public/storage
 backend/storage/framework/views/
 backend/bootstrap/cache/
-backend/database/database.sqlite
 backend/database/database.sqlite

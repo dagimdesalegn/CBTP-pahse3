@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\InventoryLog;
 use Illuminate\Http\Request;
 use App\Services\NotificationService;
+use Illuminate\Support\Facades\DB;
 
 class InventoryController extends Controller
 {
@@ -24,18 +25,27 @@ class InventoryController extends Controller
             return response()->json(['error' => 'Product not found'], 404);
         }
 
-        $previousQuantity = $product->quantity;
-        $changeAmount = $validated['quantity'] - $previousQuantity;
+        $this->ensureProductInUserScope($product, $request->user());
 
-        $product->update(['quantity' => $validated['quantity']]);
-        $product->refresh();
+        [$product, $previousQuantity, $changeAmount] = DB::transaction(function () use ($productId, $validated, $request) {
+            $product = Product::whereKey($productId)->lockForUpdate()->firstOrFail();
+            $this->ensureProductInUserScope($product, $request->user());
 
-        InventoryLog::create([
-            'product_id' => $productId,
-            'change_amount' => $changeAmount,
-            'reason' => $validated['reason'],
-            'manager_id' => auth()->id(),
-        ]);
+            $previousQuantity = $product->quantity;
+            $changeAmount = $validated['quantity'] - $previousQuantity;
+
+            $product->update(['quantity' => $validated['quantity']]);
+            $product->refresh();
+
+            InventoryLog::create([
+                'product_id' => $productId,
+                'change_amount' => $changeAmount,
+                'reason' => $validated['reason'],
+                'manager_id' => $request->user()->id,
+            ]);
+
+            return [$product, $previousQuantity, $changeAmount];
+        });
 
         if ($changeAmount > 0 || ($previousQuantity <= 0 && $product->quantity > 0)) {
             NotificationService::notifyStockAvailable($product, max($changeAmount, $product->quantity), 'restock');
@@ -53,6 +63,13 @@ class InventoryController extends Controller
 
         $query = InventoryLog::with('product', 'manager');
 
+        if ($request->user()->role === 'manager') {
+            $managerKebele = $request->user()->manager_kebele;
+            $query->whereHas('product', function ($productQuery) use ($managerKebele) {
+                $this->whereKebeleMatches($productQuery, $managerKebele);
+            });
+        }
+
         if ($request->has('product_id')) {
             $query->where('product_id', $request->product_id);
         }
@@ -68,5 +85,39 @@ class InventoryController extends Controller
         $logs = $query->orderBy('created_at', 'desc')->paginate(20);
 
         return response()->json($logs);
+    }
+
+    private function ensureProductInUserScope(Product $product, $user): void
+    {
+        if ($user->role === 'admin') {
+            return;
+        }
+
+        if ($user->role === 'manager' && $this->kebeleMatches($product->kebele, $user->manager_kebele)) {
+            return;
+        }
+
+        abort(404, 'Product not found');
+    }
+
+    private function whereKebeleMatches($query, ?string $kebele): void
+    {
+        $normalized = $this->normalizeKebele($kebele);
+        if (!$normalized) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $query->whereRaw("TRIM(REPLACE(LOWER(kebele), ' kebele', '')) = ?", [$normalized]);
+    }
+
+    private function kebeleMatches(?string $left, ?string $right): bool
+    {
+        return $this->normalizeKebele($left) === $this->normalizeKebele($right);
+    }
+
+    private function normalizeKebele(?string $kebele): string
+    {
+        return strtolower(trim(str_ireplace(' Kebele', '', $kebele ?? '')));
     }
 }

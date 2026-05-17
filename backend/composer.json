@@ -1,6 +1,7 @@
 {
   "name": "cooperative/store-management",
   "description": "Shemachoch commerce management system",
+  "license": "MIT",
   "type": "project",
   "require": {
     "php": "^8.2",
@@ -28,6 +29,20 @@
     }
   },
   "scripts": {
+    "test": [
+      "@php tests/BackendIntegrityGuardsTest.php",
+      "@php tests/DeleteAccountWiringTest.php",
+      "@php tests/ForgotPasswordWiringTest.php",
+      "@php tests/GoogleFrontendRedirectConfigTest.php",
+      "@php tests/KebeleScopedProductsTest.php",
+      "@php tests/ManagerRoleAssignmentTest.php",
+      "@php tests/TelegramStartInlineButtonTest.php",
+      "@php tests/VerificationAddressFieldsTest.php",
+      "@php tests/VerificationDocumentUploadsTest.php"
+    ],
+    "test:live": [
+      "@php tests/LiveKebeleBehaviorTest.php"
+    ],
     "post-autoload-dump": [
       "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
       "@php artisan package:discover --ansi"
@@ -45,7 +60,6 @@
   "config": {
     "sort-packages": true,
     "allow-plugins": {
-      "pestphp/pest-plugin": true,
       "php-http/discovery": true
     }
   },

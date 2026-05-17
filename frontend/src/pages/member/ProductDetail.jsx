@@ -9,6 +9,7 @@ import { Button, ProductImage, StockBadge } from '../../components/ui'
 import { formatBirr } from '../../utils/currency'
 import { useAuth } from '../../hooks/useAuth'
 import { useLanguage } from '../../context/LanguageContext'
+import { useCart } from '../../context/CartContext'
 import api from '../../services/api'
 import { checkoutErrorMessage, createOrderAndStartPayment } from '../../utils/checkout'
 
@@ -18,11 +19,11 @@ export default function ProductDetail() {
   const { t, productName, productDescription, categoryLabel } = useLanguage()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [cart, setCart] = useState([])
   const [showCartModal, setShowCartModal] = useState(false)
   const [fulfillmentType, setFulfillmentType] = useState('pickup')
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [toast, setToast] = useState(null)
+  const { cart, setCart, cartTotal, removeFromCart, updateCartQuantity, clearCart } = useCart()
 
   useEffect(() => {
     fetchProduct()
@@ -91,7 +92,7 @@ export default function ProductDetail() {
       }
 
       const { checkoutUrl } = await createOrderAndStartPayment({ cart, fulfillmentType, deliveryAddress })
-      setCart([])
+      clearCart()
       setShowCartModal(false)
       window.location.href = checkoutUrl
     } catch (err) {
@@ -114,7 +115,6 @@ export default function ProductDetail() {
 
   const effectivePrice = Number(product.effective_price ?? product.discount_price ?? product.price)
   const hasDiscount = product.discount_price && Number(product.discount_price) < Number(product.price)
-  const cartTotal = cart.reduce((sum, item) => sum + (Number(item.product.effective_price ?? item.product.discount_price ?? item.product.price) * item.quantity), 0)
   const isAdded = cart.some(item => item.product_id === product.id)
 
   return (
@@ -172,9 +172,9 @@ export default function ProductDetail() {
         cart={cart}
         cartTotal={cartTotal}
         onClose={() => setShowCartModal(false)}
-        onRemove={(productId) => setCart(cart.filter(item => item.product_id !== productId))}
+        onRemove={removeFromCart}
         onCheckout={handleCheckout}
-        onUpdateQuantity={(productId, quantity) => setCart(cart.map(item => item.product_id === productId ? { ...item, quantity } : item))}
+        onUpdateQuantity={updateCartQuantity}
         fulfillmentType={fulfillmentType}
         deliveryAddress={deliveryAddress}
         onFulfillmentChange={setFulfillmentType}

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\WalletTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class WalletController extends Controller
 {
@@ -62,8 +63,23 @@ class WalletController extends Controller
 
         $payment = DB::transaction(function () use ($request, $validated) {
             $user = User::lockForUpdate()->findOrFail($request->user()->id);
-            $order = Order::where('user_id', $user->id)->findOrFail($validated['order_id']);
+            $order = Order::where('user_id', $user->id)
+                ->lockForUpdate()
+                ->findOrFail($validated['order_id']);
             $amount = (float) $order->total_price;
+
+            if ($order->status === Order::STATUS_CANCELLED) {
+                abort(409, 'Cancelled orders cannot be paid');
+            }
+
+            $alreadyPaid = Payment::where('order_id', $order->id)
+                ->where('status', 'success')
+                ->lockForUpdate()
+                ->exists();
+
+            if ($alreadyPaid) {
+                abort(409, 'Order is already paid');
+            }
 
             if ((float) $user->account_balance < $amount) {
                 abort(422, 'Insufficient wallet balance');
@@ -84,7 +100,7 @@ class WalletController extends Controller
                 ['order_id' => $order->id],
                 [
                     'user_id' => $user->id,
-                    'tx_ref' => 'wallet-' . $order->id . '-' . now()->timestamp,
+                    'tx_ref' => 'wallet-' . $order->id . '-' . Str::uuid(),
                     'amount' => $amount,
                     'currency' => 'ETB',
                     'status' => 'success',

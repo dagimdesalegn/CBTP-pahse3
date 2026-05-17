@@ -1,5 +1,6 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate, useNavigationType } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation, useNavigate, useNavigationType } from 'react-router-dom'
 import { AuthProvider, AuthContext } from './context/AuthContext'
+import { CartProvider } from './context/CartContext'
 import { useContext, useEffect, useRef, useState } from 'react'
 import { useTelegram } from './hooks/useTelegram'
 import api from './services/api'
@@ -26,6 +27,14 @@ import UserManagement from './pages/admin/UserManagement'
 import Reports from './pages/admin/Reports'
 import AdminNotifications from './pages/admin/AdminNotifications'
 import Messages from './pages/messages/Messages'
+
+const ROOT_PATHS = new Set([
+  '/',
+  '/dashboard',
+  '/member/dashboard',
+  '/manager/dashboard',
+  '/admin/dashboard',
+])
 
 function ProtectedRoute({ children, requiredRole }) {
   const { user, loading } = useContext(AuthContext)
@@ -59,6 +68,21 @@ function RoleBasedDashboard() {
   return <Navigate to="/member/dashboard" replace />
 }
 
+function NotFound() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
+      <div className="max-w-md rounded-lg border border-slate-200 bg-white p-8 text-center shadow-sm">
+        <p className="text-sm font-bold uppercase tracking-[0.18em] text-amber-700">404</p>
+        <h1 className="mt-2 text-2xl font-black text-slate-950">Page not found</h1>
+        <p className="mt-2 text-sm leading-6 text-slate-600">The page you opened does not exist or may have moved.</p>
+        <Link to="/dashboard" className="mt-5 inline-flex rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800">
+          Go to dashboard
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 function dashboardPathForRole(role) {
   if (role === 'admin') return '/admin/dashboard'
   if (role === 'manager') return '/manager/dashboard'
@@ -86,16 +110,9 @@ function TelegramBackButtonHandler() {
   const seededDirectEntryRef = useRef(false)
 
   const currentPath = `${location.pathname}${location.search}${location.hash}`
-  const rootPaths = new Set([
-    '/',
-    '/dashboard',
-    '/member/dashboard',
-    '/manager/dashboard',
-    '/admin/dashboard',
-  ])
   const isTelegramLogin = isTelegramApp && location.pathname === '/login'
 
-  const canGoBackInApp = isTelegramLogin || stackRef.current.length > 1 || !rootPaths.has(location.pathname)
+  const canGoBackInApp = isTelegramLogin || stackRef.current.length > 1 || !ROOT_PATHS.has(location.pathname)
 
   useEffect(() => {
     const stack = stackRef.current
@@ -129,14 +146,14 @@ function TelegramBackButtonHandler() {
   }, [currentPath, navigationType])
 
   useEffect(() => {
-    if (!isTelegramApp || seededDirectEntryRef.current || rootPaths.has(location.pathname)) return
+    if (!isTelegramApp || seededDirectEntryRef.current || ROOT_PATHS.has(location.pathname)) return
     if (window.history.length > 1) return
 
     const fallback = fallbackBackPath(location.pathname, user)
     seededDirectEntryRef.current = true
     window.history.replaceState({ shemachochFallback: fallback }, '', fallback)
     window.history.pushState({ shemachochCurrent: currentPath }, '', currentPath)
-  }, [currentPath, isTelegramApp, location.pathname, rootPaths, user])
+  }, [currentPath, isTelegramApp, location.pathname, user])
 
   const goBackInApp = () => {
     if (isTelegramLogin) {
@@ -400,7 +417,7 @@ function AppRoutes() {
         />
 
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </>
   )
@@ -410,7 +427,9 @@ export default function App() {
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
-        <AppRoutes />
+        <CartProvider>
+          <AppRoutes />
+        </CartProvider>
       </AuthProvider>
     </Router>
   )

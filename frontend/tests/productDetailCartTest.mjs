@@ -4,12 +4,12 @@ const detail = readFileSync(new URL('../src/pages/member/ProductDetail.jsx', imp
 
 const expectations = [
   ['import CartDrawer', 'Product detail should import CartDrawer.'],
-  ['const [cart, setCart]', 'Product detail should keep cart state.'],
+  ['useCart()', 'Product detail should use shared cart state.'],
   ['const [showCartModal, setShowCartModal]', 'Product detail should control cart drawer visibility.'],
   ['const handleAddToCart =', 'Product detail should add product to cart instead of ordering immediately.'],
   ['<AppLayout cartCount={cart.length} onCartClick={() => setShowCartModal(true)}>', 'Product detail should show the top cart button.'],
   ['<CartDrawer', 'Product detail should render CartDrawer.'],
-  ['items: cart.map', 'Product detail checkout should submit cart items.'],
+  ['createOrderAndStartPayment({ cart, fulfillmentType, deliveryAddress })', 'Product detail checkout should submit cart items.'],
   ["t('products.addToCart')", 'Product detail button should say Add to Cart.'],
 ]
 

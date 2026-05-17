@@ -46,8 +46,12 @@ export default function Messages() {
 
   const markRead = async (message) => {
     if (tab !== 'inbox' || message.is_read) return
-    await api.put(`/messages/${message.id}/read`)
-    fetchMessages()
+    try {
+      await api.put(`/messages/${message.id}/read`)
+      fetchMessages()
+    } catch (err) {
+      setToast({ type: 'error', message: 'Could not mark message as read.' })
+    }
   }
 
   return (

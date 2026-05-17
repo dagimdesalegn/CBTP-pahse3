@@ -11,19 +11,21 @@ import { formatBirr } from '../../utils/currency'
 import api from '../../services/api'
 import { useAuth } from '../../hooks/useAuth'
 import { useLanguage } from '../../context/LanguageContext'
+import { useCart } from '../../context/CartContext'
 import { checkoutErrorMessage, createOrderAndStartPayment } from '../../utils/checkout'
 
 export default function MemberDashboard() {
   const { user } = useAuth()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [dashboardError, setDashboardError] = useState('')
   const [products, setProducts] = useState([])
-  const [cart, setCart] = useState([])
   const [toast, setToast] = useState(null)
   const [showCartModal, setShowCartModal] = useState(false)
   const [fulfillmentType, setFulfillmentType] = useState('pickup')
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const { t, productName } = useLanguage()
+  const { cart, setCart, cartTotal, removeFromCart, updateCartQuantity, clearCart } = useCart()
 
   useEffect(() => {
     fetchStats()
@@ -42,6 +44,7 @@ export default function MemberDashboard() {
       const notifications = notificationsRes.data.data || notificationsRes.data || []
 
       setProducts(Array.isArray(productList) ? productList.slice(0, 8) : [])
+      setDashboardError('')
       setStats({
         totalOrders: (Array.isArray(orders) ? orders : []).length,
         totalSpent: (Array.isArray(orders) ? orders : []).reduce((sum, o) => sum + Number(o.total_price || 0), 0),
@@ -51,8 +54,10 @@ export default function MemberDashboard() {
       })
     } catch (err) {
       console.error('Failed to fetch stats:', err)
-      setStats({ totalOrders: 0, totalSpent: 0, pendingOrders: 0, unreadNotifications: 0, availableProducts: 0 })
+      setStats(null)
       setProducts([])
+      setDashboardError('Dashboard could not be loaded. Please try again.')
+      setToast({ type: 'error', message: 'Dashboard could not be loaded. Please try again.' })
     } finally {
       setLoading(false)
     }
@@ -96,15 +101,13 @@ export default function MemberDashboard() {
       }
 
       const { checkoutUrl } = await createOrderAndStartPayment({ cart, fulfillmentType, deliveryAddress })
-      setCart([])
+      clearCart()
       setShowCartModal(false)
       window.location.href = checkoutUrl
     } catch (err) {
       setToast({ type: 'error', message: checkoutErrorMessage(err, t('cart.orderFailed')) })
     }
   }
-
-  const cartTotal = cart.reduce((sum, item) => sum + (Number(item.product.effective_price ?? item.product.discount_price ?? item.product.price) * item.quantity), 0)
 
   if (loading) return <LoadingSpinner />
 
@@ -146,13 +149,17 @@ export default function MemberDashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-5">
-        <StatCard title={t('nav.orders')} value={stats?.totalOrders || 0} icon={ShoppingCart} tone="sky" />
-        <StatCard title={t('dashboard.totalSpent')} value={formatBirr(stats?.totalSpent)} icon={CreditCard} tone="emerald" />
-        <StatCard title={t('dashboard.pending')} value={stats?.pendingOrders || 0} icon={Clock} tone="amber" />
-        <StatCard title={t('nav.products')} value={stats?.availableProducts || 0} icon={Boxes} tone="violet" />
-        <StatCard title={t('dashboard.unread')} value={stats?.unreadNotifications || 0} icon={Bell} tone="rose" />
-      </div>
+      {dashboardError ? (
+        <EmptyState title="Dashboard unavailable" description={dashboardError} />
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-5">
+          <StatCard title={t('nav.orders')} value={stats?.totalOrders || 0} icon={ShoppingCart} tone="sky" />
+          <StatCard title={t('dashboard.totalSpent')} value={formatBirr(stats?.totalSpent)} icon={CreditCard} tone="emerald" />
+          <StatCard title={t('dashboard.pending')} value={stats?.pendingOrders || 0} icon={Clock} tone="amber" />
+          <StatCard title={t('nav.products')} value={stats?.availableProducts || 0} icon={Boxes} tone="violet" />
+          <StatCard title={t('dashboard.unread')} value={stats?.unreadNotifications || 0} icon={Bell} tone="rose" />
+        </div>
+      )}
 
       <section className="mt-8">
         <div className="mb-4 flex items-center justify-between gap-4">
@@ -186,9 +193,9 @@ export default function MemberDashboard() {
         cart={cart}
         cartTotal={cartTotal}
         onClose={() => setShowCartModal(false)}
-        onRemove={(productId) => setCart(cart.filter(item => item.product_id !== productId))}
+        onRemove={removeFromCart}
         onCheckout={handleCheckout}
-        onUpdateQuantity={(productId, quantity) => setCart(cart.map(item => item.product_id === productId ? { ...item, quantity } : item))}
+        onUpdateQuantity={updateCartQuantity}
         fulfillmentType={fulfillmentType}
         deliveryAddress={deliveryAddress}
         onFulfillmentChange={setFulfillmentType}

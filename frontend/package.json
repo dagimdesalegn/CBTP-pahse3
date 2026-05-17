@@ -2,9 +2,11 @@
   "name": "cooperative-store-frontend",
   "private": true,
   "version": "0.0.1",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test": "node tests/authRefreshTest.mjs && node tests/ethiopiaLocationsTest.mjs && node tests/frontendStabilityTest.mjs && node tests/productDetailCartTest.mjs && node tests/profileVerificationStatusTest.mjs && node tests/storageUrlTest.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Services\NotificationService;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
@@ -241,8 +242,37 @@ class AuthController extends Controller
     public function deleteAccount(Request $request)
     {
         $user = $request->user();
+        $deletedMarker = 'deleted-' . $user->id . '-' . Str::uuid();
+        $verificationFiles = array_filter([
+            $user->kebele_id_image_path,
+            $user->coupon_id_image_path,
+        ]);
 
         $user->tokens()->delete();
+        $user->forceFill([
+            'name' => 'Deleted User',
+            'email' => $deletedMarker . '@deleted.local',
+            'phone' => null,
+            'kebele_id' => $deletedMarker,
+            'kebele_id_image_path' => null,
+            'coupon_id_image_path' => null,
+            'coupon_id' => null,
+            'verification_submitted_at' => null,
+            'verification_region' => null,
+            'verification_city' => null,
+            'verification_woreda_subcity' => null,
+            'verification_kebele' => null,
+            'telegram_id' => null,
+            'google_id' => null,
+            'avatar_url' => null,
+            'password' => Hash::make(Str::random(32)),
+            'is_verified' => false,
+        ])->save();
+
+        foreach ($verificationFiles as $path) {
+            Storage::disk('public')->delete($path);
+        }
+
         $user->delete();
 
         return response()->json([

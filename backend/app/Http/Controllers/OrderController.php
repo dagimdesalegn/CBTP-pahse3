@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use App\Services\NotificationService;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -87,58 +88,66 @@ class OrderController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $totalPrice = 0;
-        $items = [];
+        $requestedItems = collect($validated['items'])
+            ->groupBy('product_id')
+            ->map(fn ($items, $productId) => [
+                'product_id' => (int) $productId,
+                'quantity' => (int) $items->sum('quantity'),
+            ])
+            ->values();
 
-        // Check stock and calculate total
-        foreach ($validated['items'] as $item) {
-            $product = Product::find($item['product_id']);
+        $order = DB::transaction(function () use ($validated, $requestedItems, $user) {
+            $totalPrice = 0;
+            $items = [];
 
-            if (!$product || !$product->is_active) {
-                return response()->json([
-                    'error' => 'Product not found or is inactive',
-                ], 404);
+            foreach ($requestedItems as $item) {
+                $product = Product::whereKey($item['product_id'])->lockForUpdate()->first();
+
+                if (!$product || !$product->is_active) {
+                    abort(404, 'Product not found or is inactive');
+                }
+
+                if ($user->role === 'member' && !$this->kebeleMatches($product->kebele, $user->verification_kebele)) {
+                    abort(403, 'Product is not available in your Kebele: ' . $product->name);
+                }
+
+                if ($product->quantity < $item['quantity']) {
+                    abort(400, 'Insufficient stock for product: ' . $product->name);
+                }
+
+                $unitPrice = (float) $product->effective_price;
+                $totalPrice += $unitPrice * $item['quantity'];
+
+                $items[] = [
+                    'product' => $product,
+                    'product_id' => $product->id,
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $unitPrice,
+                ];
             }
 
-            if ($user->role === 'member' && !$this->kebeleMatches($product->kebele, $user->verification_kebele)) {
-                return response()->json([
-                    'error' => 'Product is not available in your Kebele: ' . $product->name,
-                ], 403);
+            $order = Order::create([
+                'user_id' => $user->id,
+                'status' => Order::STATUS_PENDING,
+                'fulfillment_type' => $validated['fulfillment_type'] ?? 'pickup',
+                'delivery_address' => $validated['delivery_address'] ?? null,
+                'total_price' => $totalPrice,
+                'notes' => $validated['notes'] ?? null,
+            ]);
+
+            foreach ($items as $item) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                ]);
+
+                $item['product']->decrement('quantity', $item['quantity']);
             }
 
-            if ($product->quantity < $item['quantity']) {
-                return response()->json([
-                    'error' => 'Insufficient stock for product: ' . $product->name,
-                ], 400);
-            }
-
-            $unitPrice = $product->effective_price;
-            $itemTotal = $unitPrice * $item['quantity'];
-            $totalPrice += $itemTotal;
-
-            $items[] = [
-                'product_id' => $item['product_id'],
-                'quantity' => $item['quantity'],
-                'unit_price' => $unitPrice,
-            ];
-        }
-
-        $order = Order::create([
-            'user_id' => $user->id,
-            'status' => Order::STATUS_PENDING,
-            'fulfillment_type' => $validated['fulfillment_type'] ?? 'pickup',
-            'delivery_address' => $validated['delivery_address'] ?? null,
-            'total_price' => $totalPrice,
-            'notes' => $validated['notes'] ?? null,
-        ]);
-
-        foreach ($items as $item) {
-            OrderItem::create(array_merge(['order_id' => $order->id], $item));
-
-            // Deduct stock
-            $product = Product::find($item['product_id']);
-            $product->decrement('quantity', $item['quantity']);
-        }
+            return $order;
+        });
 
         // Send notification
        // Notify member
@@ -163,7 +172,7 @@ class OrderController extends Controller
             'status' => 'required|in:' . implode(',', Order::$statuses),
         ]);
 
-        $order = Order::find($id);
+        $order = Order::with('orderItems.product')->find($id);
 
         if (!$order) {
             return response()->json(['error' => 'Order not found'], 404);
@@ -172,8 +181,25 @@ class OrderController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $oldStatus = $order->status;
-        $order->update(['status' => $validated['status']]);
+        $oldStatus = DB::transaction(function () use ($order, $validated) {
+            $lockedOrder = Order::with('orderItems.product')
+                ->lockForUpdate()
+                ->findOrFail($order->id);
+            $oldStatus = $lockedOrder->status;
+
+            if ($oldStatus === Order::STATUS_CANCELLED && $validated['status'] !== Order::STATUS_CANCELLED) {
+                abort(409, 'Cancelled orders cannot be reopened');
+            }
+
+            if ($oldStatus !== Order::STATUS_CANCELLED && $validated['status'] === Order::STATUS_CANCELLED) {
+                $this->restoreCancelledOrderStock($lockedOrder);
+            }
+
+            $lockedOrder->update(['status' => $validated['status']]);
+            $order->setRawAttributes($lockedOrder->fresh()->getAttributes(), true);
+
+            return $oldStatus;
+        });
 
            // Notify member of status update
            NotificationService::notifyOrderStatusUpdate($order, $oldStatus, $validated['status']);
@@ -195,6 +221,15 @@ class OrderController extends Controller
                 $this->whereProductKebeleMatches($query, $manager->manager_kebele);
             })
             ->exists();
+    }
+
+    private function restoreCancelledOrderStock(Order $order): void
+    {
+        foreach ($order->orderItems as $item) {
+            Product::whereKey($item->product_id)
+                ->lockForUpdate()
+                ->increment('quantity', $item->quantity);
+        }
     }
 
     private function whereProductKebeleMatches($query, ?string $kebele): void

@@ -33,10 +33,14 @@ export default function Toast({ type = 'info', message, duration = 3000, onClose
   const Icon = icons[type]
 
   return (
-    <div className={`fixed top-4 right-4 max-w-md border rounded-lg p-4 ${styles[type]} flex items-gap-3 shadow-lg z-50`}>
+    <div
+      role={type === 'error' ? 'alert' : 'status'}
+      aria-live={type === 'error' ? 'assertive' : 'polite'}
+      className={`fixed top-4 right-4 max-w-md border rounded-lg p-4 ${styles[type]} flex items-gap-3 shadow-lg z-50`}
+    >
       <Icon size={20} className="flex-shrink-0" />
       <p className="flex-1 ml-3">{message}</p>
-      <button onClick={() => setVisible(false)} className="ml-2">
+      <button onClick={() => setVisible(false)} className="ml-2" aria-label="Dismiss notification">
         <X size={18} />
       </button>
     </div>

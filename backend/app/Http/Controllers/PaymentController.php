@@ -24,11 +24,8 @@ class PaymentController extends Controller
             'order_id' => 'required|integer|exists:orders,id',
         ]);
 
-        $order = Order::with('user')->findOrFail($validated['order_id']);
-
-        if ($user->role === 'member' && $order->user_id !== $user->id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
+        $order = Order::with('user', 'orderItems.product')->findOrFail($validated['order_id']);
+        $this->ensureOrderPaymentVisibleToUser($order, $user);
 
         $existing = Payment::where('order_id', $order->id)
             ->orderBy('created_at', 'desc')
@@ -139,7 +136,7 @@ class PaymentController extends Controller
             'meta' => $verification,
         ]);
 
-        return response()->json(['message' => 'Payment verified', 'payment' => $payment]);
+        return response()->json(['message' => 'Payment verified']);
     }
 
     public function verify(Request $request, $txRef, ChapaService $chapa)
@@ -148,6 +145,9 @@ class PaymentController extends Controller
         if (!$payment) {
             return response()->json(['error' => 'Payment not found'], 404);
         }
+
+        $payment->load('order.orderItems.product');
+        $this->ensureOrderPaymentVisibleToUser($payment->order, $request->user());
 
         $verification = $chapa->verify($txRef);
         $status = $verification['data']['status'] ?? ($verification['status'] ?? 'pending');
@@ -163,11 +163,8 @@ class PaymentController extends Controller
     public function orderPayment(Request $request, $orderId)
     {
         $user = $request->user();
-        $order = Order::findOrFail($orderId);
-
-        if ($user->role === 'member' && $order->user_id !== $user->id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
+        $order = Order::with('orderItems.product')->findOrFail($orderId);
+        $this->ensureOrderPaymentVisibleToUser($order, $user);
 
         $payment = Payment::where('order_id', $order->id)->orderBy('created_at', 'desc')->first();
 
@@ -207,5 +204,45 @@ class PaymentController extends Controller
     {
         $parts = preg_split('/\s+/', trim($name));
         return $parts[1] ?? 'Member';
+    }
+
+    private function ensureOrderPaymentVisibleToUser(Order $order, $user): void
+    {
+        if ($user->role === 'admin') {
+            return;
+        }
+
+        if ($user->role === 'member' && $order->user_id === $user->id) {
+            return;
+        }
+
+        if ($user->role === 'manager' && $this->orderIsInManagerScope($order, $user)) {
+            return;
+        }
+
+        abort(403, 'Unauthorized');
+    }
+
+    private function orderIsInManagerScope(Order $order, $manager): bool
+    {
+        if (!$manager->manager_kebele) {
+            return false;
+        }
+
+        $order->loadMissing('orderItems.product');
+
+        return $order->orderItems->contains(function ($item) use ($manager) {
+            return $this->kebeleMatches($item->product?->kebele, $manager->manager_kebele);
+        });
+    }
+
+    private function kebeleMatches(?string $left, ?string $right): bool
+    {
+        return $this->normalizeKebele($left) === $this->normalizeKebele($right);
+    }
+
+    private function normalizeKebele(?string $kebele): string
+    {
+        return strtolower(trim(str_ireplace(' Kebele', '', $kebele ?? '')));
     }
 }

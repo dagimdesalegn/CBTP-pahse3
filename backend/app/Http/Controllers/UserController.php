@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Services\NotificationService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -174,6 +175,11 @@ class UserController extends Controller
             ], 422);
         }
 
+        $oldDocumentPaths = array_filter([
+            $user->kebele_id_image_path,
+            $user->coupon_id_image_path,
+        ]);
+
         $path = $file->store('verification-ids', 'public');
         $couponPath = $couponFile->store('verification-coupons', 'public');
 
@@ -193,6 +199,12 @@ class UserController extends Controller
         }
 
         $user->update($updateData);
+
+        foreach ($oldDocumentPaths as $oldPath) {
+            if ($oldPath !== $path && $oldPath !== $couponPath) {
+                Storage::disk('public')->delete($oldPath);
+            }
+        }
 
         // Send response immediately, notification fires after response sent
         $response = response()->json([
