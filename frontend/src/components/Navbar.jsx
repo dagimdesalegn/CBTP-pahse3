@@ -30,6 +30,7 @@ export default function Navbar({ cartCount = 0, onCartClick }) {
       { icon: Home, label: t('nav.dashboard'), path: '/manager/dashboard' },
       { icon: Package, label: t('nav.products'), path: '/manager/products' },
       { icon: ShoppingCart, label: t('nav.orders'), path: '/manager/orders' },
+      { icon: Users, label: t('nav.users'), path: '/manager/users' },
       { icon: Settings, label: t('nav.inventory'), path: '/manager/inventory' },
       { icon: Truck, label: t('nav.suppliers'), path: '/manager/suppliers' },
       { icon: Mail, label: t('nav.messages'), path: '/messages' },

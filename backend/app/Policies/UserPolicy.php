@@ -8,16 +8,16 @@ class UserPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasAccess('users') || $user->hasAccess('reports');
+        return $user->role === 'manager' || $user->hasAccess('users') || $user->hasAccess('reports');
     }
 
     public function view(User $user): bool
     {
-        return $user->hasAccess('users') || $user->hasAccess('reports');
+        return $user->role === 'manager' || $user->hasAccess('users') || $user->hasAccess('reports');
     }
 
     public function update(User $user): bool
     {
-        return $user->hasAccess('users');
+        return $user->role === 'manager' || $user->hasAccess('users');
     }
 }

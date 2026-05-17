@@ -14,6 +14,12 @@ class UserController extends Controller
         $this->authorize('viewAny', User::class);
 
         $query = User::query();
+        $currentUser = $request->user();
+
+        if ($currentUser->role === 'manager') {
+            $query->where('role', 'member');
+            $this->whereKebeleMatches($query, $currentUser->manager_kebele);
+        }
 
         if ($request->has('role')) {
             $query->where('role', $request->role);
@@ -27,7 +33,7 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->paginate(20);
+        $users = $query->orderByDesc('created_at')->paginate(20);
 
         return response()->json($users);
     }
@@ -204,5 +210,21 @@ class UserController extends Controller
         });
 
         return $response;
+    }
+
+    private function whereKebeleMatches($query, ?string $kebele): void
+    {
+        $normalized = $this->normalizeKebele($kebele);
+        if (!$normalized) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $query->whereRaw("TRIM(REPLACE(LOWER(verification_kebele), ' kebele', '')) = ?", [$normalized]);
+    }
+
+    private function normalizeKebele(?string $kebele): string
+    {
+        return strtolower(trim(str_ireplace(' Kebele', '', $kebele ?? '')));
     }
 }

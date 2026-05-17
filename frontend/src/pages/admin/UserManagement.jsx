@@ -7,8 +7,10 @@ import { Button, DataTable, EmptyState, PageHeader } from '../../components/ui'
 import { formatBirr } from '../../utils/currency'
 import api from '../../services/api'
 import { getKebeleSuggestions } from '../../data/ethiopiaLocations'
+import { useAuth } from '../../hooks/useAuth'
 
 export default function UserManagement() {
+  const { user: currentUser } = useAuth()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -21,6 +23,7 @@ export default function UserManagement() {
   const [managerKebele, setManagerKebele] = useState('')
 
   const apiBase = import.meta.env.VITE_API_URL || ''
+  const isManagerView = currentUser?.role === 'manager'
   const publicBase = apiBase.endsWith('/api') ? apiBase.slice(0, -4) : apiBase
   const selectedImageUrl = selectedUser?.kebele_id_image_path ? `${publicBase}/storage/${selectedUser.kebele_id_image_path}` : null
   const selectedCouponImageUrl = selectedUser?.coupon_id_image_path ? `${publicBase}/storage/${selectedUser.coupon_id_image_path}` : null
@@ -155,8 +158,8 @@ export default function UserManagement() {
     <AppLayout>
       <PageHeader
         eyebrow="Members"
-        title="User Management"
-        description="Search members, verify accounts, and inspect submitted verification documents."
+        title={isManagerView ? 'Member Verification' : 'User Management'}
+        description={isManagerView ? 'Review and verify members assigned to your kebele.' : 'Search members, verify accounts, and inspect submitted verification documents.'}
       />
 
       <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -166,7 +169,50 @@ export default function UserManagement() {
         </label>
       </div>
 
-      <DataTable columns={columns} rows={users} empty={<EmptyState title="No users found" description="Try a different search term." />} />
+      {users.length === 0 ? (
+        <EmptyState title="No users found" description="Try a different search term." />
+      ) : (
+        <>
+          <div className="grid gap-3 md:hidden">
+            {users.map(user => (
+              <div key={user.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-base font-black text-slate-950">{user.name}</p>
+                    <p className="truncate text-xs font-semibold text-slate-500">{user.email}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold capitalize text-slate-700">{user.role}</span>
+                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${user.is_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
+                        {user.is_verified ? 'Verified' : 'Pending'}
+                      </span>
+                    </div>
+                  </div>
+                  <button onClick={() => openDetails(user)} className="rounded-lg border border-slate-200 p-2 text-slate-700">
+                    <Eye size={18} />
+                  </button>
+                </div>
+                <div className="mt-3 grid gap-2 text-sm text-slate-600">
+                  <p><span className="font-bold text-slate-900">Phone:</span> {user.phone || 'Not provided'}</p>
+                  <p><span className="font-bold text-slate-900">Kebele:</span> {user.verification_kebele || 'Not provided'}</p>
+                </div>
+                {user.role === 'member' && (
+                  <Button
+                    variant={user.is_verified ? 'danger' : 'success'}
+                    className="mt-3 w-full"
+                    onClick={() => handleVerify(user.id, user.is_verified)}
+                  >
+                    <ShieldCheck size={15} />
+                    {user.is_verified ? 'Unverify' : 'Verify'}
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="hidden md:block">
+            <DataTable columns={columns} rows={users} empty={<EmptyState title="No users found" description="Try a different search term." />} />
+          </div>
+        </>
+      )}
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
 
       {selectedUser && (
@@ -198,21 +244,23 @@ export default function UserManagement() {
                 <Info label="Verification" value={selectedUser.is_verified ? 'Verified' : 'Pending'} />
                 <Info label="Submitted At" value={selectedUser.verification_submitted_at ? new Date(selectedUser.verification_submitted_at).toLocaleString() : 'Not submitted'} />
               </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <KeyRound size={18} className="text-amber-700" />
-                  <p className="text-sm font-black text-slate-950">Role assignment</p>
+              {!isManagerView && (
+                <div className="rounded-lg border border-slate-200 bg-white p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <KeyRound size={18} className="text-amber-700" />
+                    <p className="text-sm font-black text-slate-950">Role assignment</p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                    <select name="role" value={selectedRole} onChange={e => setSelectedRole(e.target.value)} className="ui-input">
+                      <option value="member">Member</option>
+                      <option value="manager">Manager</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                    <Button type="button" onClick={updateAccess}>Save role</Button>
+                  </div>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                  <select name="role" value={selectedRole} onChange={e => setSelectedRole(e.target.value)} className="ui-input">
-                    <option value="member">Member</option>
-                    <option value="manager">Manager</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                  <Button type="button" onClick={updateAccess}>Save role</Button>
-                </div>
-              </div>
-              {selectedRole === 'admin' && (
+              )}
+              {!isManagerView && selectedRole === 'admin' && (
                 <div className="rounded-lg border border-slate-200 bg-white p-4">
                   <div className="mb-3 flex items-center gap-2">
                     <KeyRound size={18} className="text-amber-700" />
@@ -229,7 +277,7 @@ export default function UserManagement() {
                   </div>
                 </div>
               )}
-              {selectedRole === 'manager' && (
+              {!isManagerView && selectedRole === 'manager' && (
                 <div className="rounded-lg border border-slate-200 bg-white p-4">
                   <div className="mb-3 flex items-center gap-2">
                     <KeyRound size={18} className="text-amber-700" />
@@ -250,7 +298,7 @@ export default function UserManagement() {
                   </div>
                 </div>
               )}
-              {selectedUser.role === 'member' && (
+              {!isManagerView && selectedUser.role === 'member' && (
                 <div className="rounded-lg border border-slate-200 bg-white p-4">
                   <div className="mb-3 flex items-center gap-2">
                     <CreditCard size={18} className="text-amber-700" />

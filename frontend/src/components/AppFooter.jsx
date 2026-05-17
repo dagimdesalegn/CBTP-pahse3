@@ -21,7 +21,7 @@ export default function AppFooter({ cartCount = 0, onCartClick }) {
       { icon: Home, label: t('nav.home'), path: '/manager/dashboard' },
       { icon: Package, label: t('nav.products'), path: '/manager/products' },
       { icon: ShoppingCart, label: t('nav.orders'), path: '/manager/orders' },
-      { icon: Truck, label: t('nav.supply'), path: '/manager/suppliers' },
+      { icon: Users, label: t('nav.users'), path: '/manager/users' },
     ],
     admin: [
       { icon: Home, label: t('nav.home'), path: '/admin/dashboard' },

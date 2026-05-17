@@ -349,6 +349,14 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/manager/users"
+          element={
+            <ProtectedRoute requiredRole="manager">
+              <UserManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/admin/suppliers"
           element={
             <ProtectedRoute requiredRole="admin">
