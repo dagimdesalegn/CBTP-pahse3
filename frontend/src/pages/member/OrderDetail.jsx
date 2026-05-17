@@ -61,6 +61,7 @@ export default function OrderDetail() {
     0,
     statusSteps.findIndex(step => step.key === order?.status)
   )
+  const isPaymentPaid = payment?.status === 'success'
 
   const initializePayment = async () => {
     setPaying(true)
@@ -253,18 +254,20 @@ export default function OrderDetail() {
                   <div className="mt-4 space-y-3 text-sm text-slate-600">
                     <p><span className="font-semibold text-slate-900">Status:</span> {capitalize(payment?.status || 'unpaid')}</p>
                     <p><span className="font-semibold text-slate-900">Amount:</span> {formatBirr(payment?.amount || order.total_price)}</p>
-                    {payment?.checkout_url ? (
+                    {isPaymentPaid ? (
+                      <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+                        Payment completed
+                      </div>
+                    ) : payment?.checkout_url && ['initialized', 'pending'].includes(payment?.status) ? (
                       <Button as="a" href={payment.checkout_url} className="w-full">Continue Payment</Button>
                     ) : (
                       <div className="grid gap-2">
-                        <Button onClick={initializePayment} disabled={paying || payment?.status === 'success'} className="w-full">
-                          {payment?.status === 'success' ? 'Paid' : paying ? 'Starting Payment...' : 'Pay Now'}
+                        <Button onClick={initializePayment} disabled={paying} className="w-full">
+                          {paying ? 'Starting Payment...' : 'Pay Now'}
                         </Button>
-                        {payment?.status !== 'success' && (
-                          <Button variant="secondary" onClick={payWithWallet} disabled={paying} className="w-full">
-                            Pay with wallet
-                          </Button>
-                        )}
+                        <Button variant="secondary" onClick={payWithWallet} disabled={paying} className="w-full">
+                          Pay with wallet
+                        </Button>
                       </div>
                     )}
                   </div>
