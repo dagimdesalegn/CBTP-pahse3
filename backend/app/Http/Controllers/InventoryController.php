@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\InventoryLog;
 use Illuminate\Http\Request;
+use App\Services\NotificationService;
 
 class InventoryController extends Controller
 {
@@ -23,9 +24,11 @@ class InventoryController extends Controller
             return response()->json(['error' => 'Product not found'], 404);
         }
 
-        $changeAmount = $validated['quantity'] - $product->quantity;
+        $previousQuantity = $product->quantity;
+        $changeAmount = $validated['quantity'] - $previousQuantity;
 
         $product->update(['quantity' => $validated['quantity']]);
+        $product->refresh();
 
         InventoryLog::create([
             'product_id' => $productId,
@@ -33,6 +36,10 @@ class InventoryController extends Controller
             'reason' => $validated['reason'],
             'manager_id' => auth()->id(),
         ]);
+
+        if ($changeAmount > 0 || ($previousQuantity <= 0 && $product->quantity > 0)) {
+            NotificationService::notifyStockAvailable($product, max($changeAmount, $product->quantity), 'restock');
+        }
 
         return response()->json([
             'message' => 'Inventory updated successfully',

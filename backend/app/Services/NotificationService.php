@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Notification;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -120,5 +121,43 @@ class NotificationService
         $message = $statusMessages[$newStatus] ?? "Your order status has been updated to {$newStatus}";
 
         self::notifyUser($order->user, '📦 Order Status Update', $message);
+    }
+
+    public static function notifyStockAvailable(Product $product, int $addedQuantity, string $event = 'restock'): void
+    {
+        if ($addedQuantity <= 0 || !$product->is_active || $product->quantity <= 0) {
+            return;
+        }
+
+        $members = User::where('role', 'member')
+            ->where('is_verified', true)
+            ->whereNotNull('telegram_id')
+            ->get()
+            ->filter(fn ($user) => self::kebeleMatches($product->kebele, $user->verification_kebele));
+
+        if ($members->isEmpty()) {
+            return;
+        }
+
+        $title = $event === 'new'
+            ? 'New Stock Available'
+            : 'Product Restocked';
+
+        $message = "{$product->name} is now available in {$product->kebele}. Stock: {$product->quantity}.";
+
+        foreach ($members as $member) {
+            self::notifyUser($member, $title, $message);
+        }
+    }
+
+    private static function kebeleMatches(?string $productKebele, ?string $memberKebele): bool
+    {
+        return self::normalizeKebele($productKebele) !== ''
+            && self::normalizeKebele($productKebele) === self::normalizeKebele($memberKebele);
+    }
+
+    private static function normalizeKebele(?string $kebele): string
+    {
+        return strtolower(trim(str_ireplace(' Kebele', '', $kebele ?? '')));
     }
 }

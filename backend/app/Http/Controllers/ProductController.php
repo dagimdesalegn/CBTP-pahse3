@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use App\Services\NotificationService;
 
 class ProductController extends Controller
 {
@@ -90,6 +91,8 @@ class ProductController extends Controller
             'image_path' => $imagePath,
         ]);
 
+        NotificationService::notifyStockAvailable($product, (int) $product->quantity, 'new');
+
         return response()->json([
             'message' => 'Product created successfully',
             'product' => $product,
@@ -132,7 +135,19 @@ class ProductController extends Controller
             unset($validated['kebele']);
         }
 
+        $previousQuantity = $product->quantity;
+        $wasActive = $product->is_active;
+
         $product->update($validated);
+        $product->refresh();
+
+        $addedQuantity = $product->quantity - $previousQuantity;
+        $becameAvailable = $previousQuantity <= 0 && $product->quantity > 0;
+        $becameActiveWithStock = !$wasActive && $product->is_active && $product->quantity > 0;
+
+        if ($addedQuantity > 0 || $becameAvailable || $becameActiveWithStock) {
+            NotificationService::notifyStockAvailable($product, max($addedQuantity, $product->quantity), 'restock');
+        }
 
         return response()->json([
             'message' => 'Product updated successfully',
