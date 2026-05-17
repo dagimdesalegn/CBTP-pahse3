@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Check, ShoppingCart, Truck } from 'lucide-react'
 import AppLayout from '../../components/AppLayout'
 import LoadingSpinner from '../../components/LoadingSpinner'
@@ -10,10 +10,10 @@ import { formatBirr } from '../../utils/currency'
 import { useAuth } from '../../hooks/useAuth'
 import { useLanguage } from '../../context/LanguageContext'
 import api from '../../services/api'
+import { checkoutErrorMessage, createOrderAndStartPayment } from '../../utils/checkout'
 
 export default function ProductDetail() {
   const { id } = useParams()
-  const navigate = useNavigate()
   const { user } = useAuth()
   const { t, productName, productDescription, categoryLabel } = useLanguage()
   const [product, setProduct] = useState(null)
@@ -90,17 +90,12 @@ export default function ProductDetail() {
         return
       }
 
-      await api.post('/orders', {
-        items: cart.map(item => ({ product_id: item.product_id, quantity: item.quantity })),
-        fulfillment_type: fulfillmentType,
-        delivery_address: fulfillmentType === 'delivery' ? deliveryAddress.trim() : null,
-      })
-      setToast({ type: 'success', message: t('cart.orderSuccess') })
+      const { checkoutUrl } = await createOrderAndStartPayment({ cart, fulfillmentType, deliveryAddress })
       setCart([])
       setShowCartModal(false)
-      setTimeout(() => navigate('/member/orders'), 1500)
+      window.location.href = checkoutUrl
     } catch (err) {
-      setToast({ type: 'error', message: err.response?.data?.error || err.response?.data?.message || t('cart.orderFailed') })
+      setToast({ type: 'error', message: checkoutErrorMessage(err, t('cart.orderFailed')) })
     }
   }
 

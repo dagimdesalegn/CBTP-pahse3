@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Filter, Search, ShoppingCart } from 'lucide-react'
 import AppLayout from '../../components/AppLayout'
 import ProductCard from '../../components/ProductCard'
@@ -10,6 +9,7 @@ import { Button, EmptyState, PageHeader } from '../../components/ui'
 import api from '../../services/api'
 import { useAuth } from '../../hooks/useAuth'
 import { useLanguage } from '../../context/LanguageContext'
+import { checkoutErrorMessage, createOrderAndStartPayment } from '../../utils/checkout'
 
 export default function Products() {
   const [products, setProducts] = useState([])
@@ -22,7 +22,6 @@ export default function Products() {
   const [showCartModal, setShowCartModal] = useState(false)
   const [fulfillmentType, setFulfillmentType] = useState('pickup')
   const [deliveryAddress, setDeliveryAddress] = useState('')
-  const navigate = useNavigate()
   const { user } = useAuth()
   const { t, productName, categoryLabel } = useLanguage()
 
@@ -107,17 +106,12 @@ export default function Products() {
         return
       }
 
-      await api.post('/orders', {
-        items: cart.map(item => ({ product_id: item.product_id, quantity: item.quantity })),
-        fulfillment_type: fulfillmentType,
-        delivery_address: fulfillmentType === 'delivery' ? deliveryAddress.trim() : null,
-      })
-      setToast({ type: 'success', message: t('cart.orderSuccess') })
+      const { checkoutUrl } = await createOrderAndStartPayment({ cart, fulfillmentType, deliveryAddress })
       setCart([])
       setShowCartModal(false)
-      setTimeout(() => navigate('/member/orders'), 1500)
+      window.location.href = checkoutUrl
     } catch (err) {
-      setToast({ type: 'error', message: err.response?.data?.error || t('cart.orderFailed') })
+      setToast({ type: 'error', message: checkoutErrorMessage(err, t('cart.orderFailed')) })
     }
   }
 
