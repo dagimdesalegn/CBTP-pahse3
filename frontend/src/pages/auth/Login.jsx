@@ -7,6 +7,7 @@ import { Button } from '../../components/ui'
 import BrandLogo from '../../components/BrandLogo'
 import LanguageSwitcher from '../../components/LanguageSwitcher'
 import { useLanguage } from '../../context/LanguageContext'
+import { googleRedirectUrl } from '../../utils/authRedirect'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -31,9 +32,7 @@ export default function Login() {
   }
 
   const handleGoogleLogin = () => {
-    const apiBase = import.meta.env.VITE_API_URL || ''
-    const base = apiBase.endsWith('/api') ? apiBase.slice(0, -4) : apiBase
-    window.location.href = `${base}/api/auth/google/redirect`
+    window.location.href = googleRedirectUrl()
   }
 
   return (

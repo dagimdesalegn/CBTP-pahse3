@@ -7,6 +7,7 @@ import Toast from '../../components/Toast'
 import { Button } from '../../components/ui'
 import api from '../../services/api'
 import { formatBirr } from '../../utils/currency'
+import { displayMemberPhone } from '../../utils/memberDisplay'
 
 const statusSteps = [
   { key: 'pending', label: 'Requested', description: 'Order received and waiting for review' },
@@ -233,7 +234,7 @@ export default function OrderDetail() {
                   <h3 className="text-lg font-bold text-slate-900">Member Information</h3>
                   <div className="mt-4 space-y-2 text-sm text-slate-600">
                     <p><span className="font-semibold text-slate-900">Name:</span> {order.user?.name}</p>
-                    <p><span className="font-semibold text-slate-900">Phone:</span> {order.user?.phone}</p>
+                    <p><span className="font-semibold text-slate-900">Phone:</span> {displayMemberPhone(order.user?.phone)}</p>
                     <p><span className="font-semibold text-slate-900">Verification:</span> {order.user?.is_verified ? 'Verified' : 'Pending verification'}</p>
                   </div>
                 </div>

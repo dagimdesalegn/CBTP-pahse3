@@ -1,6 +1,7 @@
 import { Calendar, Package, User, X } from 'lucide-react'
 import StatusBadge from './StatusBadge'
 import { formatBirr } from '../utils/currency'
+import { displayMemberPhone } from '../utils/memberDisplay'
 
 export default function OrderDetailModal({ order, isOpen, onClose, onPaymentStatusUpdate }) {
   if (!isOpen || !order) return null
@@ -81,7 +82,7 @@ export default function OrderDetailModal({ order, isOpen, onClose, onPaymentStat
               </div>
               <div className="flex justify-between">
                 <p className="font-semibold text-slate-700">Phone:</p>
-                <p className="font-medium text-slate-900">{order.user?.phone}</p>
+                <p className="font-medium text-slate-900">{displayMemberPhone(order.user?.phone)}</p>
               </div>
               <div className="flex justify-between">
                 <p className="font-semibold text-slate-700">Verification Status:</p>

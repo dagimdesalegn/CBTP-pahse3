@@ -7,6 +7,7 @@ import { Button } from '../../components/ui'
 import BrandLogo from '../../components/BrandLogo'
 import LanguageSwitcher from '../../components/LanguageSwitcher'
 import { useLanguage } from '../../context/LanguageContext'
+import { googleRedirectUrl } from '../../utils/authRedirect'
 
 export default function Register() {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', password_confirmation: '' })
@@ -18,9 +19,7 @@ export default function Register() {
   const { t } = useLanguage()
 
   const handleGoogleLogin = () => {
-    const apiBase = import.meta.env.VITE_API_URL || ''
-    const base = apiBase.endsWith('/api') ? apiBase.slice(0, -4) : apiBase
-    window.location.href = `${base}/api/auth/google/redirect`
+    window.location.href = googleRedirectUrl()
   }
 
   const handleSubmit = async (e) => {
