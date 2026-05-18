@@ -12,6 +12,7 @@ import { useLanguage } from '../../context/LanguageContext'
 import { useCart } from '../../context/CartContext'
 import api from '../../services/api'
 import { checkoutErrorMessage, checkoutWithPaymentMethod } from '../../utils/checkout'
+import { openCheckoutUrl } from '../../utils/paymentRedirect'
 
 export default function ProductDetail() {
   const { id } = useParams()
@@ -96,7 +97,7 @@ export default function ProductDetail() {
       clearCart()
       setShowCartModal(false)
       if (action === 'redirect') {
-        window.location.href = checkoutUrl
+        openCheckoutUrl(checkoutUrl)
         return
       }
       setToast({

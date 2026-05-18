@@ -66,7 +66,6 @@ class PaymentController extends Controller
             'last_name' => $this->lastName($order->user->name),
             'tx_ref' => $txRef,
             'callback_url' => $chapa->callbackUrl($request),
-            'return_url' => $chapa->returnUrl($order->id, $request, $txRef),
             'customization' => [
                 'title' => 'Shemachoch',
                 'description' => 'Order ' . $order->id,

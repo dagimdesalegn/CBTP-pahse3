@@ -11,6 +11,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useLanguage } from '../../context/LanguageContext'
 import { useCart } from '../../context/CartContext'
 import { checkoutErrorMessage, checkoutWithPaymentMethod } from '../../utils/checkout'
+import { openCheckoutUrl } from '../../utils/paymentRedirect'
 
 export default function Products() {
   const [products, setProducts] = useState([])
@@ -104,7 +105,7 @@ export default function Products() {
       clearCart()
       setShowCartModal(false)
       if (action === 'redirect') {
-        window.location.href = checkoutUrl
+        openCheckoutUrl(checkoutUrl)
         return
       }
       setToast({

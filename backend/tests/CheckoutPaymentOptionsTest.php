@@ -12,6 +12,7 @@ $expectations = [
     [$paymentController, "'provider' => 'in_person'", 'In-person payments should store provider metadata.'],
     [$paymentController, 'public function updateStatus', 'PaymentController should allow manager/admin payment status updates.'],
     [$paymentController, "Only in-person payments can be updated manually", 'Manual status updates should be limited to in-person payments.'],
+    [$paymentController, 'callback_url', 'Chapa initialization should keep callback_url for backend payment updates.'],
     [$routes, "Route::post('/payments/in-person'", 'API should expose in-person payment creation.'],
     [$routes, "Route::put('/payments/{payment}/status'", 'API should expose manager/admin payment status update.'],
     [$checkout, 'checkoutWithPaymentMethod', 'Frontend checkout helper should support payment method choices.'],
@@ -30,6 +31,11 @@ foreach ($expectations as [$contents, $needle, $message]) {
         fwrite(STDERR, $message . PHP_EOL);
         exit(1);
     }
+}
+
+if (str_contains($paymentController, "'return_url'")) {
+    fwrite(STDERR, 'Chapa initialization should not send return_url because it auto-redirects away from the receipt page.' . PHP_EOL);
+    exit(1);
 }
 
 echo "Checkout payment options wiring is present." . PHP_EOL;

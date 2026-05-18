@@ -16,6 +16,7 @@ const files = {
   dashboard: readFileSync(new URL('../src/pages/member/Dashboard.jsx', import.meta.url), 'utf8'),
   products: readFileSync(new URL('../src/pages/member/Products.jsx', import.meta.url), 'utf8'),
   detail: readFileSync(new URL('../src/pages/member/ProductDetail.jsx', import.meta.url), 'utf8'),
+  paymentRedirect: readFileSync(new URL('../src/utils/paymentRedirect.js', import.meta.url), 'utf8'),
   toast: readFileSync(new URL('../src/components/Toast.jsx', import.meta.url), 'utf8'),
   drawer: readFileSync(new URL('../src/components/CartDrawer.jsx', import.meta.url), 'utf8'),
 }
@@ -30,6 +31,8 @@ const expectations = [
   [files.dashboard, 'useCart()', 'Dashboard should use shared cart state.'],
   [files.products, 'useCart()', 'Products should use shared cart state.'],
   [files.detail, 'useCart()', 'ProductDetail should use shared cart state.'],
+  [files.paymentRedirect, 'telegramWebApp.openLink', 'Chapa checkout should open via Telegram openLink inside the Mini App.'],
+  [files.paymentRedirect, "window.location.href = checkoutUrl", 'Chapa checkout should fall back to browser redirect outside Telegram.'],
   [files.toast, "role={type === 'error' ? 'alert' : 'status'}", 'Toast should announce messages to assistive tech.'],
   [files.toast, 'aria-label="Dismiss notification"', 'Toast close button should have an accessible name.'],
   [files.drawer, 'Escape', 'Cart drawer should close on Escape.'],

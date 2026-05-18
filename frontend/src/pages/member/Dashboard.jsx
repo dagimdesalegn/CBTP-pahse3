@@ -13,6 +13,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useLanguage } from '../../context/LanguageContext'
 import { useCart } from '../../context/CartContext'
 import { checkoutErrorMessage, checkoutWithPaymentMethod } from '../../utils/checkout'
+import { openCheckoutUrl } from '../../utils/paymentRedirect'
 
 export default function MemberDashboard() {
   const { user } = useAuth()
@@ -105,7 +106,7 @@ export default function MemberDashboard() {
       clearCart()
       setShowCartModal(false)
       if (action === 'redirect') {
-        window.location.href = checkoutUrl
+        openCheckoutUrl(checkoutUrl)
         return
       }
       setToast({
