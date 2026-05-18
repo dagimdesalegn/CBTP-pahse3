@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InventoryLog;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Services\NotificationService;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -27,6 +29,15 @@ class ProductController extends Controller
                   ->orWhere('description_am', 'like', '%' . $request->search . '%')
                   ->orWhere('description_or', 'like', '%' . $request->search . '%');
             });
+        }
+
+        if ($request->filled('stock_status')) {
+            match ($request->input('stock_status')) {
+                'out' => $query->where('quantity', 0),
+                'low' => $query->where('quantity', '>', 0)->where('quantity', '<=', 10),
+                'in_stock' => $query->where('quantity', '>', 10),
+                default => null,
+            };
         }
 
         $products = $query
@@ -91,6 +102,20 @@ class ProductController extends Controller
             'image_path' => $imagePath,
         ]);
 
+        if ((int) $product->quantity > 0) {
+            InventoryLog::create([
+                'product_id' => $product->id,
+                'change_amount' => (int) $product->quantity,
+                'previous_quantity' => 0,
+                'new_quantity' => (int) $product->quantity,
+                'reason' => 'Product created with opening stock',
+                'type' => 'product_create',
+                'manager_id' => $request->user()->id,
+                'reference_type' => Product::class,
+                'reference_id' => $product->id,
+            ]);
+        }
+
         NotificationService::notifyStockAvailable($product, (int) $product->quantity, 'new');
 
         return response()->json([
@@ -139,11 +164,32 @@ class ProductController extends Controller
             unset($validated['kebele']);
         }
 
-        $previousQuantity = $product->quantity;
-        $wasActive = $product->is_active;
+        [$product, $previousQuantity, $wasActive] = DB::transaction(function () use ($id, $validated, $request) {
+            $product = Product::whereKey($id)->lockForUpdate()->firstOrFail();
+            $this->ensureProductInUserScope($product, $request->user());
+            $previousQuantity = $product->quantity;
+            $wasActive = $product->is_active;
 
-        $product->update($validated);
-        $product->refresh();
+            $product->update($validated);
+            $product->refresh();
+
+            $addedQuantity = $product->quantity - $previousQuantity;
+            if (array_key_exists('quantity', $validated) && $addedQuantity !== 0) {
+                InventoryLog::create([
+                    'product_id' => $product->id,
+                    'change_amount' => $addedQuantity,
+                    'previous_quantity' => $previousQuantity,
+                    'new_quantity' => (int) $product->quantity,
+                    'reason' => $request->input('inventory_reason', 'Product quantity update'),
+                    'type' => 'product_update',
+                    'manager_id' => $request->user()->id,
+                    'reference_type' => Product::class,
+                    'reference_id' => $product->id,
+                ]);
+            }
+
+            return [$product, $previousQuantity, $wasActive];
+        });
 
         $addedQuantity = $product->quantity - $previousQuantity;
         $becameAvailable = $previousQuantity <= 0 && $product->quantity > 0;

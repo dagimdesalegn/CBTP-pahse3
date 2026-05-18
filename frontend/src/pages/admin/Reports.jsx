@@ -17,19 +17,40 @@ export default function Reports() {
   const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState('inventory')
   const [reportData, setReportData] = useState(null)
+  const [movementData, setMovementData] = useState(null)
   const [storedReports, setStoredReports] = useState([])
   const [loading, setLoading] = useState(true)
+  const [inventoryFilters, setInventoryFilters] = useState({
+    kebele: '',
+    category: '',
+    supplier_id: '',
+    stock_status: '',
+  })
 
   useEffect(() => {
     fetchReport()
+  }, [activeTab, inventoryFilters])
+
+  useEffect(() => {
     fetchStoredReports()
   }, [activeTab])
 
   const fetchReport = async () => {
     setLoading(true)
     try {
-      const response = await api.get(`/reports/${activeTab}`)
+      const params = activeTab === 'inventory' ? queryString(inventoryFilters) : ''
+      const response = await api.get(`/reports/${activeTab}${params}`)
       setReportData(response.data)
+
+      if (activeTab === 'inventory') {
+        const movementParams = queryString({
+          kebele: inventoryFilters.kebele,
+        })
+        const movementResponse = await api.get(`/inventory/logs${movementParams}`)
+        setMovementData(movementResponse.data)
+      } else {
+        setMovementData(null)
+      }
     } catch (err) {
       console.error('Failed to fetch report:', err)
     } finally {
@@ -84,7 +105,14 @@ export default function Reports() {
 
       {loading ? <LoadingSpinner /> : (
         <>
-          {activeTab === 'inventory' && <InventoryReport data={reportData} />}
+          {activeTab === 'inventory' && (
+            <InventoryReport
+              data={reportData}
+              movementData={movementData}
+              inventoryFilters={inventoryFilters}
+              onFilterChange={setInventoryFilters}
+            />
+          )}
           {activeTab === 'orders' && <OrdersReport data={reportData} />}
           {activeTab === 'members' && <MembersReport data={reportData} />}
           <ReportHistory reports={storedReports} />
@@ -92,6 +120,18 @@ export default function Reports() {
       )}
     </AppLayout>
   )
+}
+
+function queryString(values) {
+  const params = new URLSearchParams()
+  Object.entries(values).forEach(([key, value]) => {
+    if (value !== '' && value !== null && value !== undefined) {
+      params.append(key, value)
+    }
+  })
+
+  const query = params.toString()
+  return query ? `?${query}` : ''
 }
 
 function ReportHistory({ reports }) {
@@ -112,26 +152,106 @@ function ReportHistory({ reports }) {
   )
 }
 
-function InventoryReport({ data }) {
+function InventoryReport({ data, movementData, inventoryFilters, onFilterChange }) {
   const { t, productName, categoryLabel } = useLanguage()
   if (!data) return null
+  const updateFilter = (key, value) => onFilterChange(prev => ({ ...prev, [key]: value }))
   const columns = [
     { key: 'name', header: t('common.product'), render: p => <p className="font-bold text-slate-950">{productName(p)}</p> },
+    { key: 'kebele', header: 'Kebele', render: p => p.kebele || 'Not assigned' },
     { key: 'category', header: t('common.category'), render: p => categoryLabel(p.category) },
+    { key: 'supplier', header: 'Supplier', render: p => p.supplier?.company_name || '-' },
     { key: 'price', header: t('common.price'), cellClassName: 'text-right', render: p => formatBirr(p.price) },
     { key: 'quantity', header: t('common.stock'), cellClassName: 'text-right font-bold' },
     { key: 'value', header: t('common.value'), cellClassName: 'text-right font-black text-slate-950', render: p => formatBirr(Number(p.price) * Number(p.quantity)) },
   ]
+  const movementColumns = [
+    { key: 'product', header: t('common.product'), render: log => <p className="font-bold text-slate-950">{productName(log.product)}</p> },
+    { key: 'kebele', header: 'Kebele', render: log => log.product?.kebele || 'Not assigned' },
+    { key: 'type', header: 'Movement', render: log => <span className="font-semibold capitalize">{String(log.type || 'adjustment').replaceAll('_', ' ')}</span> },
+    { key: 'change_amount', header: 'Change', cellClassName: 'text-right font-black', render: log => Number(log.change_amount) > 0 ? `+${log.change_amount}` : log.change_amount },
+    { key: 'quantity', header: 'Before / After', render: log => `${log.previous_quantity ?? '-'} -> ${log.new_quantity ?? '-'}` },
+    { key: 'reason', header: 'Reason', render: log => log.reason || '-' },
+    { key: 'manager', header: 'Actor', render: log => log.manager?.name || '-' },
+    { key: 'created_at', header: 'Date', render: log => new Date(log.created_at).toLocaleString() },
+  ]
+
   return (
     <div className="space-y-6">
+      <SectionCard title="ERP stock filters" description="Filter inventory by Kebele, category, supplier, or stock condition.">
+        <div className="grid gap-3 md:grid-cols-4">
+          <input
+            value={inventoryFilters.kebele}
+            onChange={event => updateFilter('kebele', event.target.value)}
+            placeholder="Kebele"
+            className="ui-input"
+          />
+          <input
+            value={inventoryFilters.category}
+            onChange={event => updateFilter('category', event.target.value)}
+            placeholder="Category"
+            className="ui-input"
+          />
+          <input
+            type="number"
+            value={inventoryFilters.supplier_id}
+            onChange={event => updateFilter('supplier_id', event.target.value)}
+            placeholder="Supplier ID"
+            className="ui-input"
+          />
+          <select
+            value={inventoryFilters.stock_status}
+            onChange={event => updateFilter('stock_status', event.target.value)}
+            className="ui-input"
+          >
+            <option value="">All stock</option>
+            <option value="in_stock">In stock</option>
+            <option value="low">Low stock</option>
+            <option value="out">Out of stock</option>
+          </select>
+        </div>
+      </SectionCard>
+
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         <StatCard title={t('nav.products')} value={data.total_products} icon={Boxes} tone="sky" />
         <StatCard title={t('reports.stockValue')} value={formatBirr(data.total_stock_value)} icon={Boxes} tone="emerald" />
         <StatCard title={t('reports.lowStock')} value={data.low_stock_count} icon={Boxes} tone="amber" />
         <StatCard title={t('reports.outOfStock')} value={data.out_of_stock_count} icon={Boxes} tone="rose" />
       </div>
+
+      <SummaryGrid title="Stock by Kebele" rows={data.kebele_summary || []} />
+      <SummaryGrid title="Stock by category" rows={data.category_summary || []} />
+      <SummaryGrid title="Stock by supplier" rows={data.supplier_summary || []} />
+
       <DataTable columns={columns} rows={data.products || []} empty={<EmptyState title={t('reports.noProducts')} />} />
+
+      <SectionCard title="Inventory movement history" description="Audit trail for stock receipts, corrections, order sales, and cancellation restores.">
+        <DataTable columns={movementColumns} rows={movementData?.data || []} empty={<EmptyState title="No stock movements found" />} />
+      </SectionCard>
     </div>
+  )
+}
+
+function SummaryGrid({ title, rows }) {
+  if (!rows?.length) return null
+
+  return (
+    <SectionCard title={title}>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {rows.map(row => (
+          <div key={row.key} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <p className="text-sm font-black text-slate-950">{row.label || row.key}</p>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-semibold text-slate-600">
+              <p>Products: <span className="text-slate-950">{row.product_count}</span></p>
+              <p>Units: <span className="text-slate-950">{row.stock_units}</span></p>
+              <p>Low: <span className="text-amber-700">{row.low_stock_count}</span></p>
+              <p>Out: <span className="text-red-700">{row.out_of_stock_count}</span></p>
+            </div>
+            <p className="mt-3 text-lg font-black text-slate-950">{formatBirr(row.stock_value || 0)}</p>
+          </div>
+        ))}
+      </div>
+    </SectionCard>
   )
 }
 

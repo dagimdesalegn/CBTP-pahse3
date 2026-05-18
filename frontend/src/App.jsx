@@ -400,6 +400,22 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/admin/products"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <ProductManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/inventory"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <InventoryManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/admin/reports"
           element={
             <ProtectedRoute requiredRole="admin">

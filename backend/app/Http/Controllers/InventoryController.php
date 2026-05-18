@@ -15,8 +15,9 @@ class InventoryController extends Controller
         $this->authorize('update', Product::class);
 
         $validated = $request->validate([
-            'quantity' => 'required|integer',
+            'quantity' => 'required|integer|min:0',
             'reason' => 'required|string',
+            'type' => 'nullable|string|max:255',
         ]);
 
         $product = Product::find($productId);
@@ -40,7 +41,10 @@ class InventoryController extends Controller
             InventoryLog::create([
                 'product_id' => $productId,
                 'change_amount' => $changeAmount,
+                'previous_quantity' => $previousQuantity,
+                'new_quantity' => $validated['quantity'],
                 'reason' => $validated['reason'],
+                'type' => $validated['type'] ?? ($changeAmount > 0 ? 'manual_increase' : ($changeAmount < 0 ? 'manual_decrease' : 'manual_note')),
                 'manager_id' => $request->user()->id,
             ]);
 
@@ -72,6 +76,21 @@ class InventoryController extends Controller
 
         if ($request->has('product_id')) {
             $query->where('product_id', $request->product_id);
+        }
+
+        if ($request->filled('kebele')) {
+            $kebele = $request->input('kebele');
+            $query->whereHas('product', function ($productQuery) use ($kebele) {
+                $this->whereKebeleMatches($productQuery, $kebele);
+            });
+        }
+
+        if ($request->filled('manager_id')) {
+            $query->where('manager_id', $request->integer('manager_id'));
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->input('type'));
         }
 
         if ($request->has('date_from')) {

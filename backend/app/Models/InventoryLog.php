@@ -12,12 +12,19 @@ class InventoryLog extends Model
     protected $fillable = [
         'product_id',
         'change_amount',
+        'previous_quantity',
+        'new_quantity',
         'reason',
+        'type',
         'manager_id',
+        'reference_type',
+        'reference_id',
     ];
 
     protected $casts = [
         'change_amount' => 'integer',
+        'previous_quantity' => 'integer',
+        'new_quantity' => 'integer',
     ];
 
     const UPDATED_AT = null;

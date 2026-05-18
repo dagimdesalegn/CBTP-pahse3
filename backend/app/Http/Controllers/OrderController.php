@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InventoryLog;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -143,7 +144,20 @@ class OrderController extends Controller
                     'unit_price' => $item['unit_price'],
                 ]);
 
+                $previousQuantity = $item['product']->quantity;
                 $item['product']->decrement('quantity', $item['quantity']);
+                $item['product']->refresh();
+                InventoryLog::create([
+                    'product_id' => $item['product_id'],
+                    'change_amount' => -$item['quantity'],
+                    'previous_quantity' => $previousQuantity,
+                    'new_quantity' => (int) $item['product']->quantity,
+                    'reason' => "Order #{$order->id} placed",
+                    'type' => 'order_sale',
+                    'manager_id' => $user->id,
+                    'reference_type' => Order::class,
+                    'reference_id' => $order->id,
+                ]);
             }
 
             return $order;
@@ -181,7 +195,7 @@ class OrderController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $oldStatus = DB::transaction(function () use ($order, $validated) {
+        $oldStatus = DB::transaction(function () use ($order, $validated, $request) {
             $lockedOrder = Order::with('orderItems.product')
                 ->lockForUpdate()
                 ->findOrFail($order->id);
@@ -192,7 +206,7 @@ class OrderController extends Controller
             }
 
             if ($oldStatus !== Order::STATUS_CANCELLED && $validated['status'] === Order::STATUS_CANCELLED) {
-                $this->restoreCancelledOrderStock($lockedOrder);
+                $this->restoreCancelledOrderStock($lockedOrder, $request->user());
             }
 
             $lockedOrder->update(['status' => $validated['status']]);
@@ -223,12 +237,27 @@ class OrderController extends Controller
             ->exists();
     }
 
-    private function restoreCancelledOrderStock(Order $order): void
+    private function restoreCancelledOrderStock(Order $order, $actor): void
     {
         foreach ($order->orderItems as $item) {
-            Product::whereKey($item->product_id)
+            $product = Product::whereKey($item->product_id)
                 ->lockForUpdate()
-                ->increment('quantity', $item->quantity);
+                ->firstOrFail();
+            $previousQuantity = $product->quantity;
+            $product->increment('quantity', $item->quantity);
+            $product->refresh();
+
+            InventoryLog::create([
+                'product_id' => $item->product_id,
+                'change_amount' => $item->quantity,
+                'previous_quantity' => $previousQuantity,
+                'new_quantity' => (int) $product->quantity,
+                'reason' => "Order #{$order->id} cancelled",
+                'type' => 'order_cancel_restore',
+                'manager_id' => $actor->id,
+                'reference_type' => Order::class,
+                'reference_id' => $order->id,
+            ]);
         }
     }
 

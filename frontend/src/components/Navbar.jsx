@@ -38,6 +38,8 @@ export default function Navbar({ cartCount = 0, onCartClick }) {
     admin: [
       { icon: Home, label: t('nav.dashboard'), path: '/admin/dashboard' },
       { icon: Users, label: t('nav.users'), path: '/admin/users' },
+      { icon: Package, label: t('nav.products'), path: '/admin/products' },
+      { icon: Settings, label: t('nav.inventory'), path: '/admin/inventory' },
       { icon: BarChart3, label: t('nav.reports'), path: '/admin/reports' },
       { icon: Truck, label: t('nav.suppliers'), path: '/admin/suppliers' },
       { icon: Bell, label: t('nav.broadcasts'), path: '/admin/notifications' },
