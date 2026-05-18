@@ -29,6 +29,7 @@ export default function UserManagement() {
   const publicBase = apiBase.endsWith('/api') ? apiBase.slice(0, -4) : apiBase
   const selectedImageUrl = selectedUser?.kebele_id_image_path ? `${publicBase}/storage/${selectedUser.kebele_id_image_path}` : null
   const selectedCouponImageUrl = selectedUser?.coupon_id_image_path ? `${publicBase}/storage/${selectedUser.coupon_id_image_path}` : null
+  const canAdjustSelectedWallet = selectedUser?.role === 'member'
   const managerKebeleSuggestions = useMemo(() => {
     const kebeles = getKebeleSuggestions('', '', '', managerKebele)
     const values = ['Bosa Addis Kebele', ...kebeles, ...kebeles.map(kebele => `${kebele} Kebele`)]
@@ -93,7 +94,7 @@ export default function UserManagement() {
       await api.post('/wallet/adjust', {
         user_id: selectedUser.id,
         amount: Number(walletAmount),
-        description: walletDescription || 'Admin wallet adjustment',
+        description: walletDescription || (isManagerView ? 'Manager wallet top-up' : 'Admin wallet adjustment'),
       })
       setToast({ type: 'success', message: t('users.walletUpdated') })
       setWalletAmount('')
@@ -300,14 +301,14 @@ export default function UserManagement() {
                   </div>
                 </div>
               )}
-              {!isManagerView && selectedUser.role === 'member' && (
+              {canAdjustSelectedWallet && (
                 <div className="rounded-lg border border-slate-200 bg-white p-4">
                   <div className="mb-3 flex items-center gap-2">
                     <CreditCard size={18} className="text-amber-700" />
                     <p className="text-sm font-black text-slate-950">Wallet adjustment</p>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-[160px_1fr_auto]">
-                    <input type="number" value={walletAmount} onChange={e => setWalletAmount(e.target.value)} placeholder="+500 or -100" className="ui-input" />
+                    <input type="number" min={isManagerView ? '0.01' : undefined} value={walletAmount} onChange={e => setWalletAmount(e.target.value)} placeholder={isManagerView ? '+500' : '+500 or -100'} className="ui-input" />
                     <input value={walletDescription} onChange={e => setWalletDescription(e.target.value)} placeholder="Reason" className="ui-input" />
                     <Button type="button" onClick={adjustWallet} disabled={!walletAmount}>Apply</Button>
                   </div>

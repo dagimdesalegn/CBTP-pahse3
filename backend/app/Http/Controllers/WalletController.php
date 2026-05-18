@@ -25,7 +25,9 @@ class WalletController extends Controller
 
     public function adjust(Request $request)
     {
-        abort_unless($request->user()->hasAccess('wallet'), 403);
+        $actor = $request->user();
+
+        abort_unless($actor->role === 'manager' || $actor->hasAccess('wallet'), 403);
 
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
@@ -33,19 +35,23 @@ class WalletController extends Controller
             'description' => 'nullable|string|max:255',
         ]);
 
-        $transaction = DB::transaction(function () use ($request, $validated) {
+        $transaction = DB::transaction(function () use ($actor, $validated) {
             $user = User::lockForUpdate()->findOrFail($validated['user_id']);
             $amount = (float) $validated['amount'];
+
+            abort_unless($user->role === 'member', 422, 'Only member wallets can be adjusted');
+            $this->ensureManagerCanAdjustWallet($actor, $user, $amount);
+
             $user->account_balance = max(0, (float) $user->account_balance + $amount);
             $user->save();
 
             return WalletTransaction::create([
                 'user_id' => $user->id,
-                'created_by' => $request->user()->id,
+                'created_by' => $actor->id,
                 'type' => $amount >= 0 ? 'credit' : 'debit',
                 'amount' => abs($amount),
                 'balance_after' => $user->account_balance,
-                'description' => $validated['description'] ?? 'Admin balance adjustment',
+                'description' => $validated['description'] ?? ($actor->role === 'manager' ? 'Manager wallet top-up' : 'Admin balance adjustment'),
             ]);
         });
 
@@ -113,5 +119,24 @@ class WalletController extends Controller
             'message' => 'Order paid from wallet',
             'payment' => $payment,
         ]);
+    }
+
+    private function ensureManagerCanAdjustWallet(User $actor, User $target, float $amount): void
+    {
+        if ($actor->role !== 'manager') {
+            return;
+        }
+
+        abort_unless($amount > 0, 403, 'Managers can only top up wallet balances');
+        abort_unless(
+            $this->normalizeKebele($actor->manager_kebele) === $this->normalizeKebele($target->verification_kebele),
+            403,
+            'Managers can only adjust wallets for members in their assigned Kebele'
+        );
+    }
+
+    private function normalizeKebele(?string $kebele): string
+    {
+        return strtolower(trim(str_ireplace(' Kebele', '', $kebele ?? '')));
     }
 }

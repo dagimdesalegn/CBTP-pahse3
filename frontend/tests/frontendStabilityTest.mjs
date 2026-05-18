@@ -21,6 +21,7 @@ const files = {
   memberDisplay: safeRead(new URL('../src/utils/memberDisplay.js', import.meta.url)),
   authRedirect: safeRead(new URL('../src/utils/authRedirect.js', import.meta.url)),
   paymentRedirect: readFileSync(new URL('../src/utils/paymentRedirect.js', import.meta.url), 'utf8'),
+  userManagement: readFileSync(new URL('../src/pages/admin/UserManagement.jsx', import.meta.url), 'utf8'),
   toast: readFileSync(new URL('../src/components/Toast.jsx', import.meta.url), 'utf8'),
   drawer: readFileSync(new URL('../src/components/CartDrawer.jsx', import.meta.url), 'utf8'),
 }
@@ -43,6 +44,8 @@ const expectations = [
   [files.authRedirect, "apiBase.endsWith('/api')", 'Google auth URL should avoid duplicating /api when VITE_API_URL already includes it.'],
   [files.paymentRedirect, 'telegramWebApp.openLink', 'Chapa checkout should open via Telegram openLink inside the Mini App.'],
   [files.paymentRedirect, "window.location.href = checkoutUrl", 'Chapa checkout should fall back to browser redirect outside Telegram.'],
+  [files.userManagement, 'canAdjustSelectedWallet', 'Managers should see wallet adjustment for member details.'],
+  [files.userManagement, "selectedUser?.role === 'member'", 'Wallet adjustment should stay limited to member accounts.'],
   [files.toast, "role={type === 'error' ? 'alert' : 'status'}", 'Toast should announce messages to assistive tech.'],
   [files.toast, 'aria-label="Dismiss notification"', 'Toast close button should have an accessible name.'],
   [files.drawer, 'Escape', 'Cart drawer should close on Escape.'],

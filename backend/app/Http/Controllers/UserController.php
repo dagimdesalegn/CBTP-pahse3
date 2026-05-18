@@ -39,7 +39,7 @@ class UserController extends Controller
         return response()->json($users);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $this->authorize('view', User::class);
 
@@ -48,6 +48,8 @@ class UserController extends Controller
         if (!$user) {
             return response()->json(['error' => 'User not found'], 404);
         }
+
+        $this->ensureManagerCanManageUser($request->user(), $user);
 
         return response()->json($user);
     }
@@ -86,6 +88,8 @@ class UserController extends Controller
         if (!$user) {
             return response()->json(['error' => 'User not found'], 404);
         }
+
+        $this->ensureManagerCanManageUser($request->user(), $user);
 
         // normalize phone before validation (strip spaces and hyphens)
         if ($request->has('phone')) {
@@ -233,6 +237,15 @@ class UserController extends Controller
         }
 
         $query->whereRaw("TRIM(REPLACE(LOWER(verification_kebele), ' kebele', '')) = ?", [$normalized]);
+    }
+
+    private function ensureManagerCanManageUser(User $actor, User $target): void
+    {
+        if ($actor->role !== 'manager') {
+            return;
+        }
+
+        abort_unless($target->role === 'member' && $this->normalizeKebele($actor->manager_kebele) === $this->normalizeKebele($target->verification_kebele), 403);
     }
 
     private function normalizeKebele(?string $kebele): string

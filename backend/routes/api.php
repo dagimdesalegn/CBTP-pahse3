@@ -98,13 +98,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/notifications/broadcast', [NotificationController::class, 'broadcast']);
     });
 
-    // Users - Admin only
-    Route::middleware('role:admin')->group(function () {
+    // Users and wallet adjustments - Manager/Admin
+    Route::middleware('role:manager,admin')->group(function () {
         Route::get('/users', [UserController::class, 'index']);
         Route::get('/users/{id}', [UserController::class, 'show']);
         Route::put('/users/{id}/verify', [UserController::class, 'verify']);
-        Route::put('/users/{id}/access', [UserController::class, 'updateAccess']);
         Route::post('/wallet/adjust', [WalletController::class, 'adjust']);
+    });
+
+    // Users - Admin only
+    Route::middleware('role:admin')->group(function () {
+        Route::put('/users/{id}/access', [UserController::class, 'updateAccess']);
     });
 
     // Reports - Admin only
